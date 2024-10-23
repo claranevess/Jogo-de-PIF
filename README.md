@@ -27,7 +27,7 @@ O jogo possui 2 "personagens" principais:
 O jogador: 
 O inimigo: 
 
-## Executando o jogo
+## ⚙️ Executando o jogo
 
 Para executar o Plataformia, siga essas etapas:
 
