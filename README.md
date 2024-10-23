@@ -1,6 +1,6 @@
 ## Plataformia
 
-## Descrição
+## ⭐️ Descrição
 
 "Plataformia" é um jogo de plataforma envolvente e desafiador, criado na linguagem C, que combina elementos clássicos de jogos como "Donkey Kong" e "Dino T-Rex". O jogo se desenrola em quatro fases distintas:
 
@@ -16,11 +16,11 @@ Desafios Mortais: Esta fase apresenta um novo background e plataformas que repre
 ### Tela 4 
 Fim de Jogo: A fase final exibe a pontuação do jogador, acompanhada de um botão para reiniciar ou sair.
 
-## Objetivo do jogo
+## ⚪️ Objetivo do jogo
 
 O jogador precisa coletar bolinhas ao longo das 3 fases para obter a sua pontuação final, sendo o melhor jogador o que obteve mais bolinhas. Ele apenas conseguirá a maior quantidade de bolinhas possível caso passe por essas fases, enfrentando os obstáculos e derrotando o boss.           
 
-## Como jogar
+## ⌨️ Como jogar
 
 O jogo possui 2 "personagens" principais:
 
