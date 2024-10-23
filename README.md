@@ -18,7 +18,15 @@ Fim de Jogo: A fase final exibe a pontuação do jogador, acompanhada de um bot�
 
 ## ⚪️ Objetivo do jogo
 
-O jogador precisa coletar bolinhas ao longo das 3 fases para obter a sua pontuação final, sendo o melhor jogador o que obteve mais bolinhas. Ele apenas conseguirá a maior quantidade de bolinhas possível caso passe por essas fases, enfrentando os obstáculos e derrotando o boss.           
+O jogador precisa coletar bolinhas ao longo das 3 fases para obter a sua pontuação final, sendo o melhor jogador o que obteve mais bolinhas. Ele apenas conseguirá a maior quantidade de bolinhas possível caso passe por essas fases, enfrentando os obstáculos e derrotando o boss.
+
+### Bolinhas
+
+### Obstáculos
+
+### Plataformas mortais
+
+### Boss não estático
 
 ## ⌨️ Como jogar
 
