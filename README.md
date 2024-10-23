@@ -8,6 +8,10 @@
 
 ## Executando o jogo
 
+Para executar o Plataformia, siga essas etapas:
+
+1. Clone esse repositório em sua máquina: <a href="https://github.com/claranevess/Plataformia">
+
 ## Membros
 
 - **Gabriel Araújo** - <a href="mailto:bielaraujo578@gmail.com">📧</a> - <a href="https://br.linkedin.com/in/gabriel-ara%C3%BAjo-bb37792b0"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="20"></a>
