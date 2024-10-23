@@ -10,7 +10,7 @@
 
 Para executar o Plataformia, siga essas etapas:
 
-1. Clone esse repositório em sua máquina: <a href="https://github.com/claranevess/Plataformia">
+1. Clone esse repositório em sua máquina: <a href="https://github.com/claranevess/Plataformia"></a>
 
 ## Membros
 
