@@ -68,4 +68,3 @@ cd Plataformia
         <img src="https://avatars.githubusercontent.com/u/166565110?v=4" style="border-radius: 50%; width: 100px; height: 100px;">
     </a>
 </div>
->>>>>>> 4987487079313bf99cafffc74587ad564bdc8ac8
