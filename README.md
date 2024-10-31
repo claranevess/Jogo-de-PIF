@@ -43,13 +43,15 @@ Para executar o Plataformia, siga essas etapas:
 ```
 git clone https://github.com/claranevess/Plataformia
 ```
-2. Entre na pasta do repositório
+2. Entre no arquivo do jogo:
 ```
-cd Plataformia
+Na pasta plataformia, entre na subpasta 'Source Files' e clique no arquivo main.c
 ```
-3.  Compile os arquivos: 
-4. Rode o executável do jogo: 
-5. Divirta-se jogando Plataformia com seus amigos!
+3. Rode o executável do jogo:
+```
+Clique no botão de 'Run' do seu editor
+```
+4. Divirta-se jogando Plataformia com seus amigos!
 
 ## Membros
 
