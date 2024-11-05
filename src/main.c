@@ -6,70 +6,63 @@
 #define PLAYER_HOR_SPD 200.0f
 #define MAX_COINS 5
 #define MAX_OBSTACLES 10
-#define OBSTACLE_SPAWN_TIME 1.0f // Obstáculos gerados a cada 1 segundo
-#define OBSTACLE_HORIZONTAL_SPD 100.0f // Velocidade horizontal dos obstáculos
+#define OBSTACLE_SPAWN_TIME 1.0f
+#define OBSTACLE_HORIZONTAL_SPD 100.0f
 
-// Estrutura do jogador
+int leftCount = 0;
+int rightCount = 0;
+
 typedef struct Player {
     Vector2 position;
     float speed;
     bool canJump;
 } Player;
 
-// Estrutura do ambiente
 typedef struct EnvItem {
     Rectangle rect;
     int blocking;
     Color color;
 } EnvItem;
 
-// Estrutura das moedas
 typedef struct coin {
     Vector2 position;
     bool collected;
     Color color;
 } coin;
 
-// Estrutura dos obstáculos
 typedef struct Obstacle {
     Vector2 position;
     Vector2 speed;
     bool active;
-    bool movingLeft;  // Direção do movimento horizontal
+    bool movingLeft;
     Color color;
 } Obstacle;
 
-// Estados do jogo
 typedef enum {
     MENU,
-    GAMEPLAY
+    GAMEPLAY,
+    GAMEOVER
 } GameState;
 
 // Funções principais
-void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength);
+void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState);
 void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, int envItemsLength, float delta);
 void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition);
 void DrawObstacles(Obstacle* obstacles, int maxObstacles);
 
-// Variáveis globais (para simplicidade neste exemplo)
-int leftCount = 0;
-int rightCount = 0;
-
 int main(void) {
-    // Inicialização
     const int screenWidth = 800;
     const int screenHeight = 450;
 
-    InitWindow(screenWidth, screenHeight, "raylib - Game with Menu");
+    InitWindow(screenWidth, screenHeight, "raylib - Game with Game Over Screen");
 
-    GameState currentState = MENU;  // Estado inicial: MENU
+    GameState currentState = MENU;
 
     Player player = { 0 };
     player.position = (Vector2){ 400, 280 };
     player.speed = 0;
     player.canJump = false;
 
-    // Inicialização das plataformas e do ambiente
     EnvItem envItems[] = {
         {{ -250, 0, 1000, 400 }, 0, LIGHTGRAY },
         {{ -300, 400, 1300, 300 }, 1, GRAY },
@@ -84,20 +77,17 @@ int main(void) {
     };
     int envItemsLength = sizeof(envItems) / sizeof(envItems[0]);
 
-    // Inicialização das moedas
     coin coins[MAX_COINS] = {
-        {{ 350, 180 }, false, YELLOW},  // Moeda na plataforma maior
-        {{ 270, 280 }, false, YELLOW},  // Moeda na plataforma esquerda
-        {{ 690, 280 }, false, YELLOW},  // Moeda na plataforma direita
-        {{ 400, 180 }, false, YELLOW},  // Outra moeda na plataforma maior
-        {{ 600, 180 }, false, YELLOW}   // Outra moeda na plataforma maior
+        {{ 350, 180 }, false, YELLOW},
+        {{ 270, 280 }, false, YELLOW},
+        {{ 690, 280 }, false, YELLOW},
+        {{ 400, 180 }, false, YELLOW},
+        {{ 600, 180 }, false, YELLOW}
     };
 
-    // Inicialização dos obstáculos
     Obstacle obstacles[MAX_OBSTACLES] = { 0 };
     float obstacleSpawnTimer = 0.0f;
 
-    // Configuração da câmera
     Camera2D camera = { 0 };
     camera.target = player.position;
     camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
@@ -106,22 +96,17 @@ int main(void) {
 
     SetTargetFPS(60);
 
-    // Loop principal do jogo
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
 
-        // Gerenciamento de estados do jogo
         if (currentState == MENU) {
-            // Transição para GAMEPLAY ao pressionar Enter
             if (IsKeyPressed(KEY_ENTER)) {
                 currentState = GAMEPLAY;
             }
         }
         else if (currentState == GAMEPLAY) {
-            // Atualização do jogo
-            UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS);
+            UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState);
 
-            // Gerar obstáculos a cada intervalo definido
             obstacleSpawnTimer += deltaTime;
             if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
                 obstacleSpawnTimer = 0.0f;
@@ -130,7 +115,6 @@ int main(void) {
 
             UpdateObstacles(obstacles, MAX_OBSTACLES, envItems, envItemsLength, deltaTime);
 
-            // Atualização da câmera
             camera.target = player.position;
             camera.zoom += ((float)GetMouseWheelMove() * 0.05f);
             if (camera.zoom > 3.0f) camera.zoom = 3.0f;
@@ -141,34 +125,37 @@ int main(void) {
                 player.position = (Vector2){ 400, 280 };
             }
         }
+        else if (currentState == GAMEOVER) {
+            if (IsKeyPressed(KEY_ENTER)) {
+                currentState = MENU;  // Volta ao menu
+                player.position = (Vector2){ 400, 280 };  // Reinicia o jogador
+                player.speed = 0;
+            }
+        }
 
-        // Renderização
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
         if (currentState == MENU) {
-            // Tela de menu
+            ClearBackground(SKYBLUE);
             DrawText("Bem-vindo ao Plataformia!", screenWidth / 2 - MeasureText("Bem-vindo ao Plataformia!", 20) / 2, screenHeight / 2 - 20, 20, BLACK);
             DrawText("Aperte ENTER para começar", screenWidth / 2 - MeasureText("Aperte ENTER para começar", 20) / 2, screenHeight / 2 + 10, 20, DARKGRAY);
             DrawText("Use as setas do teclado para se mover e a barra de espaço para pular", screenWidth / 2 - MeasureText("Use as setas do teclado para se mover e a barra de espaço para pular", 20) / 2, screenHeight / 2 + 40, 20, DARKGRAY);
         }
         else if (currentState == GAMEPLAY) {
-            // Tela de gameplay
+            ClearBackground(DARKGRAY);
+
             BeginMode2D(camera);
 
             for (int i = 0; i < envItemsLength; i++) DrawRectangleRec(envItems[i].rect, envItems[i].color);
 
-            // Desenha moedas
             for (int i = 0; i < MAX_COINS; i++) {
                 if (!coins[i].collected) {
                     DrawCircle(coins[i].position.x, coins[i].position.y, 10, coins[i].color);
                 }
             }
 
-            // Desenha o jogador
             DrawCircle(player.position.x, player.position.y, 20, GREEN);
-
-            // Desenha obstáculos
             DrawObstacles(obstacles, MAX_OBSTACLES);
 
             EndMode2D();
@@ -178,18 +165,20 @@ int main(void) {
             DrawText("- Space to jump", 40, 60, 10, DARKGRAY);
             DrawText("- Mouse Wheel to Zoom in-out, R to reset zoom", 40, 80, 10, DARKGRAY);
         }
+        else if (currentState == GAMEOVER) {
+            ClearBackground(RED);
+            DrawText("GAME OVER", screenWidth / 2 - MeasureText("GAME OVER", 30) / 2, screenHeight / 2 - 20, 30, BLACK);
+            DrawText("Aperte ENTER para voltar para o menu", screenWidth / 2 - MeasureText("Aperte ENTER para voltar para o menu", 20) / 2, screenHeight / 2 + 10, 20, DARKGRAY);
+        }
 
         EndDrawing();
     }
 
-    // Finalização
     CloseWindow();
-
     return 0;
 }
 
-// Atualiza o jogador
-void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength) {
+void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState) {
     if (IsKeyDown(KEY_LEFT)) player->position.x -= PLAYER_HOR_SPD * delta;
     if (IsKeyDown(KEY_RIGHT)) player->position.x += PLAYER_HOR_SPD * delta;
     if (IsKeyDown(KEY_SPACE) && player->canJump) {
@@ -223,6 +212,11 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
     }
     else {
         player->canJump = true;
+    }
+
+    // Verifica se o jogador caiu do chão
+    if (player->position.y > 600) {
+        *currentState = GAMEOVER;
     }
 
     // Colisão do jogador com as moedas
