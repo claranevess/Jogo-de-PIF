@@ -167,8 +167,8 @@ int main(void) {
         }
         else if (currentState == GAMEOVER) {
             ClearBackground(RED);
-            DrawText("GAME OVER", screenWidth / 2 - MeasureText("GAME OVER", 30) / 2, screenHeight / 2 - 20, 30, BLACK);
-            DrawText("Aperte ENTER para voltar para o menu", screenWidth / 2 - MeasureText("Aperte ENTER para voltar para o menu", 20) / 2, screenHeight / 2 + 10, 20, DARKGRAY);
+            DrawText("GAME OVER", screenWidth / 2 - MeasureText("GAME OVER", 40) / 2, screenHeight / 2 - 60, 40, BLACK);
+            DrawText("Aperte ENTER para voltar para o menu", screenWidth / 2 - MeasureText("Aperte ENTER para voltar para o menu", 20) / 2, screenHeight / 2, 20, DARKGRAY);
         }
 
         EndDrawing();
