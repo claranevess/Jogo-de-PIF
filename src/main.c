@@ -165,11 +165,6 @@ int main(void) {
             EndMode2D();
 
             DrawHealthBar(&player, screenWidth);  // Desenha a barra de vidas
-
-            DrawText("Controls:", 20, 20, 10, BLACK);
-            DrawText("- Right/Left to move", 40, 40, 10, DARKGRAY);
-            DrawText("- Space to jump", 40, 60, 10, DARKGRAY);
-            DrawText("- Mouse Wheel to Zoom in-out, R to reset zoom", 40, 80, 10, DARKGRAY);
         }
         else if (currentState == GAMEOVER) {
             ClearBackground(RED);
