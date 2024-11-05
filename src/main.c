@@ -16,6 +16,7 @@ typedef struct Player {
     Vector2 position;
     float speed;
     bool canJump;
+    int lives;  // Número de vidas do jogador
 } Player;
 
 typedef struct EnvItem {
@@ -49,6 +50,7 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
 void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, int envItemsLength, float delta);
 void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition);
 void DrawObstacles(Obstacle* obstacles, int maxObstacles);
+void DrawHealthBar(Player* player, int screenWidth);  // Nova função para desenhar a barra de vidas
 
 int main(void) {
     const int screenWidth = 800;
@@ -62,6 +64,7 @@ int main(void) {
     player.position = (Vector2){ 400, 280 };
     player.speed = 0;
     player.canJump = false;
+    player.lives = 3;  // Jogador começa com 3 vidas
 
     EnvItem envItems[] = {
         {{ -250, 0, 1000, 400 }, 0, LIGHTGRAY },
@@ -130,6 +133,7 @@ int main(void) {
                 currentState = MENU;  // Volta ao menu
                 player.position = (Vector2){ 400, 280 };  // Reinicia o jogador
                 player.speed = 0;
+                player.lives = 3;  // Reinicia as vidas
             }
         }
 
@@ -159,6 +163,8 @@ int main(void) {
             DrawObstacles(obstacles, MAX_OBSTACLES);
 
             EndMode2D();
+
+            DrawHealthBar(&player, screenWidth);  // Desenha a barra de vidas
 
             DrawText("Controls:", 20, 20, 10, BLACK);
             DrawText("- Right/Left to move", 40, 40, 10, DARKGRAY);
@@ -216,7 +222,15 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
 
     // Verifica se o jogador caiu do chão
     if (player->position.y > 600) {
-        *currentState = GAMEOVER;
+        player->lives--;  // Perde uma vida
+        if (player->lives <= 0) {
+            *currentState = GAMEOVER;  // Vai para a tela de Game Over se as vidas acabarem
+        }
+        else {
+            // Reposiciona o jogador
+            player->position = (Vector2){ 400, 280 };
+            player->speed = 0;
+        }
     }
 
     // Colisão do jogador com as moedas
@@ -303,5 +317,17 @@ void DrawObstacles(Obstacle* obstacles, int maxObstacles) {
             };
             DrawTriangle(vertices[0], vertices[1], vertices[2], RED);
         }
+    }
+}
+
+// Função para desenhar a barra de vidas
+void DrawHealthBar(Player* player, int screenWidth) {
+    int barX = 20;  // Posição X da barra
+    int barY = 20;  // Posição Y da barra
+    int barSpacing = 10;  // Espaço entre os corações
+    int heartSize = 20;  // Tamanho de cada coração
+
+    for (int i = 0; i < player->lives; i++) {
+        DrawRectangle(barX + i * (heartSize + barSpacing), barY, heartSize, heartSize, RED);  // Desenha um coração por vida
     }
 }
