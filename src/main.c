@@ -46,7 +46,7 @@ typedef enum {
 } GameState;
 
 // Funções principais
-void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState);
+void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, Obstacle* obstacles, int maxObstacles);
 void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, int envItemsLength, float delta);
 void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition);
 void DrawObstacles(Obstacle* obstacles, int maxObstacles);
@@ -64,7 +64,7 @@ int main(void) {
     player.position = (Vector2){ 400, 280 };
     player.speed = 0;
     player.canJump = false;
-    player.lives = 3;  // Jogador começa com 3 vidas
+    player.lives = 9;  // Jogador começa com 3 vidas
 
     EnvItem envItems[] = {
         {{ -250, 0, 1000, 400 }, 0, LIGHTGRAY },
@@ -108,7 +108,9 @@ int main(void) {
             }
         }
         else if (currentState == GAMEPLAY) {
-            UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState);
+            UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState, obstacles, MAX_OBSTACLES);
+
+
 
             obstacleSpawnTimer += deltaTime;
             if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
@@ -179,7 +181,9 @@ int main(void) {
     return 0;
 }
 
-void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState) {
+// Atualiza os obstáculos
+void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, Obstacle* obstacles, int maxObstacles){
+    // Movimento do jogador
     if (IsKeyDown(KEY_LEFT)) player->position.x -= PLAYER_HOR_SPD * delta;
     if (IsKeyDown(KEY_RIGHT)) player->position.x += PLAYER_HOR_SPD * delta;
     if (IsKeyDown(KEY_SPACE) && player->canJump) {
@@ -188,9 +192,10 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
     }
 
     bool hitObstacle = false;
-    float radius = 20.0f;
+    float radius = 20.0f;  // Raio de colisão do jogador
 
-    for (int i = 0; i < envItemsLength; i++) {
+    // Verifica colisão com as plataformas
+    for(int i = 0; i < envItemsLength; i++) {
         EnvItem* ei = envItems + i;
         Vector2* p = &(player->position);
 
@@ -215,16 +220,26 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
         player->canJump = true;
     }
 
-    // Verifica se o jogador caiu do chão
-    if (player->position.y > 600) {
-        player->lives--;  // Perde uma vida
-        if (player->lives <= 0) {
-            *currentState = GAMEOVER;  // Vai para a tela de Game Over se as vidas acabarem
-        }
-        else {
-            // Reposiciona o jogador
-            player->position = (Vector2){ 400, 280 };
-            player->speed = 0;
+    // Colisão com os obstáculos
+    for (int i = 0; i < maxObstacles; i++) {
+        if (obstacles[i].active) {
+            float distX = player->position.x - obstacles[i].position.x;
+            float distY = player->position.y - obstacles[i].position.y;
+
+            // Se a distância entre o jogador e o obstáculo for pequena (indicando colisão)
+            if (fabs(distX) < 20.0f && fabs(distY) < 20.0f) {
+                hitObstacle = true;  // O jogador colidiu com o obstáculo
+                player->lives--;  // O jogador perde uma vida
+
+                if (player->lives <= 0) {
+                    *currentState = GAMEOVER;  // Game Over se as vidas acabarem
+                }
+                else {
+                    // Reposiciona o jogador após a colisão
+                    player->position = (Vector2){ 400, 280 };
+                    player->speed = 0.0f;
+                }
+            }
         }
     }
 
@@ -232,71 +247,6 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
     for (int i = 0; i < coinsLength; i++) {
         if (!coins[i].collected && CheckCollisionCircles(player->position, 20, coins[i].position, 10)) {
             coins[i].collected = true;
-        }
-    }
-}
-
-// Gera novos obstáculos
-void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition) {
-    for (int i = 0; i < maxObstacles; i++) {
-        if (!obstacles[i].active) {
-            obstacles[i].position = spawnPosition;
-            obstacles[i].speed = (Vector2){ 0.0f, 0.0f };
-            obstacles[i].active = true;
-
-            if (leftCount <= rightCount) {
-                obstacles[i].movingLeft = true;  // Movimento para a esquerda
-                leftCount++;
-            }
-            else {
-                obstacles[i].movingLeft = false;  // Movimento para a direita
-                rightCount++;
-            }
-
-            obstacles[i].color = RED;
-            break;
-        }
-    }
-}
-
-// Atualiza os obstáculos
-void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, int envItemsLength, float delta) {
-    for (int i = 0; i < maxObstacles; i++) {
-        if (!obstacles[i].active) continue;
-
-        bool hitObstacle = false;
-
-        obstacles[i].speed.y += G * delta;  // Gravidade
-        obstacles[i].position.y += obstacles[i].speed.y * delta;
-
-        if (obstacles[i].movingLeft) {
-            obstacles[i].position.x -= OBSTACLE_HORIZONTAL_SPD * delta;
-        }
-        else {
-            obstacles[i].position.x += OBSTACLE_HORIZONTAL_SPD * delta;
-        }
-
-        float baseLeft = obstacles[i].position.x - 10;
-        float baseRight = obstacles[i].position.x + 10;
-        float baseY = obstacles[i].position.y + 20;
-
-        for (int j = 0; j < envItemsLength; j++) {
-            EnvItem* ei = &envItems[j];
-
-            if (ei->blocking &&
-                baseRight >= ei->rect.x &&
-                baseLeft <= ei->rect.x + ei->rect.width &&
-                baseY >= ei->rect.y &&
-                baseY <= ei->rect.y + obstacles[i].speed.y * delta) {
-                hitObstacle = true;
-                obstacles[i].speed.y = -PLAYER_JUMP_SPD / 2;
-                obstacles[i].position.y = ei->rect.y - 20;
-                break;
-            }
-        }
-
-        if (!hitObstacle && obstacles[i].position.y > 600) {
-            obstacles[i].active = false;
         }
     }
 }
@@ -311,6 +261,32 @@ void DrawObstacles(Obstacle* obstacles, int maxObstacles) {
                 {obstacles[i].position.x + 10, obstacles[i].position.y + 20}
             };
             DrawTriangle(vertices[0], vertices[1], vertices[2], RED);
+        }
+    }
+}
+void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition) {
+    for (int i = 0; i < maxObstacles; i++) {
+        if (!obstacles[i].active) {  // Procura por um obstáculo inativo
+            obstacles[i].active = true;
+            obstacles[i].position = spawnPosition;  // Define a posição do obstáculo
+            obstacles[i].speed = (Vector2){ 0, OBSTACLE_HORIZONTAL_SPD };  // Atribui uma velocidade ao obstáculo (exemplo)
+            obstacles[i].movingLeft = false;
+            obstacles[i].color = RED;  // Cor do obstáculo
+            break;  // Interrompe o loop após ativar um obstáculo
+        }
+    }
+}
+void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, int envItemsLength, float delta) {
+    for (int i = 0; i < maxObstacles; i++) {
+        if (obstacles[i].active) {
+            // Atualize a posição do obstáculo com base em sua velocidade
+            obstacles[i].position.x += obstacles[i].speed.x * delta;
+            obstacles[i].position.y += obstacles[i].speed.y * delta;
+
+            // Se o obstáculo sair da tela, desative-o
+            if (obstacles[i].position.x < 0 || obstacles[i].position.x > 800 || obstacles[i].position.y > 450) {
+                obstacles[i].active = false;
+            }
         }
     }
 }
