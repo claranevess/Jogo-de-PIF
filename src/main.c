@@ -39,6 +39,11 @@ typedef struct Obstacle {
     Color color;
 } Obstacle;
 
+typedef struct ObstacleNode {
+    Obstacle obstacle;
+    struct ObstacleNode* next;
+} ObstacleNode;
+
 typedef enum {
     MENU,
     GAMEPLAY,
@@ -47,10 +52,12 @@ typedef enum {
 
 // Funções principais
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState);
-void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, int envItemsLength, float delta);
-void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition);
-void DrawObstacles(Obstacle* obstacles, int maxObstacles);
-void DrawHealthBar(Player* player, int screenWidth);  // Nova função para desenhar a barra de vidas
+void AddObstacle(ObstacleNode** head, Vector2 spawnPosition);
+void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta);
+void RemoveInactiveObstacles(ObstacleNode** head);
+void DrawObstacles(ObstacleNode* head);
+void FreeObstacleList(ObstacleNode* head);
+void DrawHealthBar(Player* player, int screenWidth);  // Função para desenhar a barra de vidas
 
 int main(void) {
     const int screenWidth = 800;
@@ -88,24 +95,14 @@ int main(void) {
         {{ 600, 180 }, false, YELLOW}
     };
 
-    // Alocação dinâmica para os obstáculos
-    int numObstacles = 10;  // Pode ser modificado conforme necessário
-    Obstacle* obstacles = (Obstacle*)malloc(numObstacles * sizeof(Obstacle));
-    if (obstacles == NULL) {
-        printf("Erro ao alocar memória para obstáculos.\n");
-        return 1;
-    }
-    for (int i = 0; i < numObstacles; i++) {
-        obstacles[i].active = false;
-    }
+    ObstacleNode* obstacleList = NULL;
+    float obstacleSpawnTimer = 0.0f;
 
     Camera2D camera = { 0 };
     camera.target = player.position;
     camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
-
-    float obstacleSpawnTimer = 0.0f;
 
     SetTargetFPS(60);
 
@@ -123,10 +120,11 @@ int main(void) {
             obstacleSpawnTimer += deltaTime;
             if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
                 obstacleSpawnTimer = 0.0f;
-                SpawnObstacle(obstacles, numObstacles, (Vector2) { 400, 100 });
+                AddObstacle(&obstacleList, (Vector2) { 400, 100 });
             }
 
-            UpdateObstacles(obstacles, numObstacles, envItems, envItemsLength, deltaTime);
+            UpdateObstacles(obstacleList, envItems, envItemsLength, deltaTime);
+            RemoveInactiveObstacles(&obstacleList);
 
             camera.target = player.position;
             camera.zoom += ((float)GetMouseWheelMove() * 0.05f);
@@ -140,7 +138,7 @@ int main(void) {
         }
         else if (currentState == GAMEOVER) {
             if (IsKeyPressed(KEY_ENTER)) {
-                currentState = MENU;  // Volta ao menu
+                currentState = MENU;
                 player.position = (Vector2){ 400, 280 };
                 player.speed = 0;
                 player.lives = 3;
@@ -170,7 +168,7 @@ int main(void) {
             }
 
             DrawCircle(player.position.x, player.position.y, 20, GREEN);
-            DrawObstacles(obstacles, numObstacles);
+            DrawObstacles(obstacleList);
 
             EndMode2D();
 
@@ -185,8 +183,7 @@ int main(void) {
         EndDrawing();
     }
 
-    free(obstacles);  // Libera a memória alocada para os obstáculos
-
+    FreeObstacleList(obstacleList);
     CloseWindow();
     return 0;
 }
@@ -245,79 +242,114 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
     }
 }
 
-void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition) {
-    for (int i = 0; i < maxObstacles; i++) {
-        if (!obstacles[i].active) {
-            obstacles[i].position = spawnPosition;
-            obstacles[i].speed = (Vector2){ 0.0f, 0.0f };
-            obstacles[i].active = true;
+void AddObstacle(ObstacleNode** head, Vector2 spawnPosition) {
+    ObstacleNode* newNode = (ObstacleNode*)malloc(sizeof(ObstacleNode));
+    if (newNode == NULL) return;
 
-            if (leftCount <= rightCount) {
-                obstacles[i].movingLeft = true;
-                leftCount++;
-            }
-            else {
-                obstacles[i].movingLeft = false;
-                rightCount++;
-            }
+    newNode->obstacle.position = spawnPosition;
+    newNode->obstacle.speed = (Vector2){ 0.0f, 0.0f };
+    newNode->obstacle.active = true;
+    newNode->obstacle.color = RED;
 
-            obstacles[i].color = RED;
-            break;
-        }
+    if (leftCount <= rightCount) {
+        newNode->obstacle.movingLeft = true;
+        leftCount++;
     }
+    else {
+        newNode->obstacle.movingLeft = false;
+        rightCount++;
+    }
+
+    newNode->next = *head;
+    *head = newNode;
 }
 
-void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, int envItemsLength, float delta) {
-    for (int i = 0; i < maxObstacles; i++) {
-        if (!obstacles[i].active) continue;
+void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta) {
+    ObstacleNode* current = head;
+
+    while (current != NULL) {
+        if (!current->obstacle.active) {
+            current = current->next;
+            continue;
+        }
 
         bool hitObstacle = false;
+        current->obstacle.speed.y += G * delta;
+        current->obstacle.position.y += current->obstacle.speed.y * delta;
 
-        obstacles[i].speed.y += G * delta;
-        obstacles[i].position.y += obstacles[i].speed.y * delta;
-
-        if (obstacles[i].movingLeft) {
-            obstacles[i].position.x -= OBSTACLE_HORIZONTAL_SPD * delta;
+        if (current->obstacle.movingLeft) {
+            current->obstacle.position.x -= OBSTACLE_HORIZONTAL_SPD * delta;
         }
         else {
-            obstacles[i].position.x += OBSTACLE_HORIZONTAL_SPD * delta;
+            current->obstacle.position.x += OBSTACLE_HORIZONTAL_SPD * delta;
         }
-
-        float baseLeft = obstacles[i].position.x - 10;
-        float baseRight = obstacles[i].position.x + 10;
-        float baseY = obstacles[i].position.y + 20;
 
         for (int j = 0; j < envItemsLength; j++) {
             EnvItem* ei = &envItems[j];
-
             if (ei->blocking &&
-                baseRight >= ei->rect.x &&
-                baseLeft <= ei->rect.x + ei->rect.width &&
-                baseY >= ei->rect.y &&
-                baseY <= ei->rect.y + obstacles[i].speed.y * delta) {
+                current->obstacle.position.x + 10 >= ei->rect.x &&
+                current->obstacle.position.x - 10 <= ei->rect.x + ei->rect.width &&
+                current->obstacle.position.y + 20 >= ei->rect.y &&
+                current->obstacle.position.y <= ei->rect.y + current->obstacle.speed.y * delta) {
                 hitObstacle = true;
-                obstacles[i].speed.y = -PLAYER_JUMP_SPD / 2;
-                obstacles[i].position.y = ei->rect.y - 20;
+                current->obstacle.speed.y = -PLAYER_JUMP_SPD / 2;
+                current->obstacle.position.y = ei->rect.y - 20;
                 break;
             }
         }
 
-        if (!hitObstacle && obstacles[i].position.y > 600) {
-            obstacles[i].active = false;
+        if (!hitObstacle && current->obstacle.position.y > 600) {
+            current->obstacle.active = false;
+        }
+
+        current = current->next;
+    }
+}
+
+void RemoveInactiveObstacles(ObstacleNode** head) {
+    ObstacleNode* current = *head;
+    ObstacleNode* prev = NULL;
+
+    while (current != NULL) {
+        if (!current->obstacle.active) {
+            if (prev == NULL) {
+                *head = current->next;
+            }
+            else {
+                prev->next = current->next;
+            }
+            ObstacleNode* temp = current;
+            current = current->next;
+            free(temp);
+        }
+        else {
+            prev = current;
+            current = current->next;
         }
     }
 }
 
-void DrawObstacles(Obstacle* obstacles, int maxObstacles) {
-    for (int i = 0; i < maxObstacles; i++) {
-        if (obstacles[i].active) {
+void DrawObstacles(ObstacleNode* head) {
+    ObstacleNode* current = head;
+    while (current != NULL) {
+        if (current->obstacle.active) {
             Vector2 vertices[3] = {
-                {obstacles[i].position.x, obstacles[i].position.y},
-                {obstacles[i].position.x - 10, obstacles[i].position.y + 20},
-                {obstacles[i].position.x + 10, obstacles[i].position.y + 20}
+                {current->obstacle.position.x, current->obstacle.position.y},
+                {current->obstacle.position.x - 10, current->obstacle.position.y + 20},
+                {current->obstacle.position.x + 10, current->obstacle.position.y + 20}
             };
             DrawTriangle(vertices[0], vertices[1], vertices[2], RED);
         }
+        current = current->next;
+    }
+}
+
+void FreeObstacleList(ObstacleNode* head) {
+    ObstacleNode* current = head;
+    while (current != NULL) {
+        ObstacleNode* temp = current;
+        current = current->next;
+        free(temp);
     }
 }
 
