@@ -1,11 +1,11 @@
 #include "raylib.h"
 #include "raymath.h"
+#include <stdlib.h>  // Para malloc e free
 
 #define G 740
 #define PLAYER_JUMP_SPD 400.0f
 #define PLAYER_HOR_SPD 200.0f
 #define MAX_COINS 5
-#define MAX_OBSTACLES 10
 #define OBSTACLE_SPAWN_TIME 1.0f
 #define OBSTACLE_HORIZONTAL_SPD 100.0f
 
@@ -72,9 +72,9 @@ int main(void) {
         {{ 300, 200, 400, 10 }, 1, GRAY },
         {{ 250, 300, 100, 10 }, 1, GRAY },
         {{ 650, 300, 100, 10 }, 1, GRAY },
-        {{ 250, 100, 100, 10 }, 1, GRAY },      // Nova plataforma esquerda acima da plataforma larga
-        {{ 650, 100, 100, 10 }, 1, GRAY },      // Nova plataforma direita acima da plataforma larga
-        {{ 450 - 37.5f, 50, 180, 10 }, 1, GRAY }, // Penúltima plataforma
+        {{ 250, 100, 100, 10 }, 1, GRAY },
+        {{ 650, 100, 100, 10 }, 1, GRAY },
+        {{ 450 - 37.5f, 50, 180, 10 }, 1, GRAY },
         {{220, -30, 100, 10}, 1, GRAY},
         {{-130, -130, 300, 10}, 1, GRAY}
     };
@@ -88,14 +88,24 @@ int main(void) {
         {{ 600, 180 }, false, YELLOW}
     };
 
-    Obstacle obstacles[MAX_OBSTACLES] = { 0 };
-    float obstacleSpawnTimer = 0.0f;
+    // Alocação dinâmica para os obstáculos
+    int numObstacles = 10;  // Pode ser modificado conforme necessário
+    Obstacle* obstacles = (Obstacle*)malloc(numObstacles * sizeof(Obstacle));
+    if (obstacles == NULL) {
+        printf("Erro ao alocar memória para obstáculos.\n");
+        return 1;
+    }
+    for (int i = 0; i < numObstacles; i++) {
+        obstacles[i].active = false;
+    }
 
     Camera2D camera = { 0 };
     camera.target = player.position;
     camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
+
+    float obstacleSpawnTimer = 0.0f;
 
     SetTargetFPS(60);
 
@@ -113,10 +123,10 @@ int main(void) {
             obstacleSpawnTimer += deltaTime;
             if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
                 obstacleSpawnTimer = 0.0f;
-                SpawnObstacle(obstacles, MAX_OBSTACLES, (Vector2) { 400, 100 });
+                SpawnObstacle(obstacles, numObstacles, (Vector2) { 400, 100 });
             }
 
-            UpdateObstacles(obstacles, MAX_OBSTACLES, envItems, envItemsLength, deltaTime);
+            UpdateObstacles(obstacles, numObstacles, envItems, envItemsLength, deltaTime);
 
             camera.target = player.position;
             camera.zoom += ((float)GetMouseWheelMove() * 0.05f);
@@ -131,9 +141,9 @@ int main(void) {
         else if (currentState == GAMEOVER) {
             if (IsKeyPressed(KEY_ENTER)) {
                 currentState = MENU;  // Volta ao menu
-                player.position = (Vector2){ 400, 280 };  // Reinicia o jogador
+                player.position = (Vector2){ 400, 280 };
                 player.speed = 0;
-                player.lives = 3;  // Reinicia as vidas
+                player.lives = 3;
             }
         }
 
@@ -160,11 +170,11 @@ int main(void) {
             }
 
             DrawCircle(player.position.x, player.position.y, 20, GREEN);
-            DrawObstacles(obstacles, MAX_OBSTACLES);
+            DrawObstacles(obstacles, numObstacles);
 
             EndMode2D();
 
-            DrawHealthBar(&player, screenWidth);  // Desenha a barra de vidas
+            DrawHealthBar(&player, screenWidth);
         }
         else if (currentState == GAMEOVER) {
             ClearBackground(RED);
@@ -174,6 +184,8 @@ int main(void) {
 
         EndDrawing();
     }
+
+    free(obstacles);  // Libera a memória alocada para os obstáculos
 
     CloseWindow();
     return 0;
@@ -215,20 +227,17 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
         player->canJump = true;
     }
 
-    // Verifica se o jogador caiu do chão
     if (player->position.y > 600) {
-        player->lives--;  // Perde uma vida
+        player->lives--;
         if (player->lives <= 0) {
-            *currentState = GAMEOVER;  // Vai para a tela de Game Over se as vidas acabarem
+            *currentState = GAMEOVER;
         }
         else {
-            // Reposiciona o jogador
             player->position = (Vector2){ 400, 280 };
             player->speed = 0;
         }
     }
 
-    // Colisão do jogador com as moedas
     for (int i = 0; i < coinsLength; i++) {
         if (!coins[i].collected && CheckCollisionCircles(player->position, 20, coins[i].position, 10)) {
             coins[i].collected = true;
@@ -236,7 +245,6 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
     }
 }
 
-// Gera novos obstáculos
 void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition) {
     for (int i = 0; i < maxObstacles; i++) {
         if (!obstacles[i].active) {
@@ -245,11 +253,11 @@ void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition)
             obstacles[i].active = true;
 
             if (leftCount <= rightCount) {
-                obstacles[i].movingLeft = true;  // Movimento para a esquerda
+                obstacles[i].movingLeft = true;
                 leftCount++;
             }
             else {
-                obstacles[i].movingLeft = false;  // Movimento para a direita
+                obstacles[i].movingLeft = false;
                 rightCount++;
             }
 
@@ -259,14 +267,13 @@ void SpawnObstacle(Obstacle* obstacles, int maxObstacles, Vector2 spawnPosition)
     }
 }
 
-// Atualiza os obstáculos
 void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, int envItemsLength, float delta) {
     for (int i = 0; i < maxObstacles; i++) {
         if (!obstacles[i].active) continue;
 
         bool hitObstacle = false;
 
-        obstacles[i].speed.y += G * delta;  // Gravidade
+        obstacles[i].speed.y += G * delta;
         obstacles[i].position.y += obstacles[i].speed.y * delta;
 
         if (obstacles[i].movingLeft) {
@@ -301,7 +308,6 @@ void UpdateObstacles(Obstacle* obstacles, int maxObstacles, EnvItem* envItems, i
     }
 }
 
-// Desenha os obstáculos
 void DrawObstacles(Obstacle* obstacles, int maxObstacles) {
     for (int i = 0; i < maxObstacles; i++) {
         if (obstacles[i].active) {
@@ -315,14 +321,13 @@ void DrawObstacles(Obstacle* obstacles, int maxObstacles) {
     }
 }
 
-// Função para desenhar a barra de vidas
 void DrawHealthBar(Player* player, int screenWidth) {
-    int barX = 20;  // Posição X da barra
-    int barY = 20;  // Posição Y da barra
-    int barSpacing = 10;  // Espaço entre os corações
-    int heartSize = 20;  // Tamanho de cada coração
+    int barX = 20;
+    int barY = 20;
+    int barSpacing = 10;
+    int heartSize = 20;
 
     for (int i = 0; i < player->lives; i++) {
-        DrawRectangle(barX + i * (heartSize + barSpacing), barY, heartSize, heartSize, RED);  // Desenha um coração por vida
+        DrawRectangle(barX + i * (heartSize + barSpacing), barY, heartSize, heartSize, RED);
     }
 }
