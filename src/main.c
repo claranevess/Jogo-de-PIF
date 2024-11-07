@@ -44,6 +44,11 @@ typedef struct ObstacleNode {
     struct ObstacleNode* next;
 } ObstacleNode;
 
+typedef struct {
+    char name[20];     // Nome do jogador (com limite de 20 caracteres)
+    int coinsCollected; // Número de moedas coletadas
+} PlayerRecord;
+
 typedef enum {
     MENU,
     GAMEPLAY,
@@ -51,7 +56,7 @@ typedef enum {
 } GameState;
 
 // Funções principais
-void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState);
+void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected);
 void AddObstacle(ObstacleNode** head, Vector2 spawnPosition);
 void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta);
 void RemoveInactiveObstacles(ObstacleNode** head);
@@ -66,6 +71,8 @@ int main(void) {
     InitWindow(screenWidth, screenHeight, "raylib - Game with Game Over Screen");
 
     GameState currentState = MENU;
+
+    int coinsCollected = 0;  // Contador de moedas coletadas
 
     Player player = { 0 };
     player.position = (Vector2){ 400, 280 };
@@ -115,7 +122,7 @@ int main(void) {
             }
         }
         else if (currentState == GAMEPLAY) {
-            UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState);
+            UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState, &coinsCollected);
 
             obstacleSpawnTimer += deltaTime;
             if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
@@ -173,6 +180,9 @@ int main(void) {
             EndMode2D();
 
             DrawHealthBar(&player, screenWidth);
+
+            // Desenha o contador de moedas na tela
+            DrawText(TextFormat("Coins Collected: %d", coinsCollected), 20, 50, 20, GOLD);
         }
         else if (currentState == GAMEOVER) {
             ClearBackground(RED);
@@ -188,7 +198,7 @@ int main(void) {
     return 0;
 }
 
-void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState) {
+void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected) {
     if (IsKeyDown(KEY_LEFT)) player->position.x -= PLAYER_HOR_SPD * delta;
     if (IsKeyDown(KEY_RIGHT)) player->position.x += PLAYER_HOR_SPD * delta;
     if (IsKeyDown(KEY_SPACE) && player->canJump) {
@@ -238,6 +248,7 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
     for (int i = 0; i < coinsLength; i++) {
         if (!coins[i].collected && CheckCollisionCircles(player->position, 20, coins[i].position, 10)) {
             coins[i].collected = true;
+            (*coinsCollected)++;  // Incrementa o contador de moedas
         }
     }
 }
