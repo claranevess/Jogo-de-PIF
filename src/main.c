@@ -5,7 +5,7 @@
 #define G 740
 #define PLAYER_JUMP_SPD 400.0f
 #define PLAYER_HOR_SPD 200.0f
-#define MAX_COINS 5
+#define MAX_COINS 6
 #define OBSTACLE_SPAWN_TIME 1.0f
 #define OBSTACLE_HORIZONTAL_SPD 100.0f
 
@@ -96,10 +96,9 @@ int main(void) {
 
     coin coins[MAX_COINS] = {
         {{ 350, 180 }, false, YELLOW},
-        {{ 270, 280 }, false, YELLOW},
         {{ 690, 280 }, false, YELLOW},
-        {{ 400, 180 }, false, YELLOW},
-        {{ 600, 180 }, false, YELLOW}
+        {{510, 30}, false, YELLOW},
+        {{300, -45}, false, YELLOW}
     };
 
     ObstacleNode* obstacleList = NULL;
@@ -182,7 +181,7 @@ int main(void) {
             DrawHealthBar(&player, screenWidth);
 
             // Desenha o contador de moedas na tela
-            DrawText(TextFormat("Coins Collected: %d", coinsCollected), 20, 50, 20, GOLD);
+            DrawText(TextFormat("Moedas coletadas: %d", coinsCollected), 20, 50, 20, GOLD);
         }
         else if (currentState == GAMEOVER) {
             ClearBackground(RED);
