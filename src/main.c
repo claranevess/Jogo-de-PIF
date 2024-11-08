@@ -10,7 +10,9 @@
 #define OBSTACLE_HORIZONTAL_SPD 100.0f
 
 int leftCount = 0;
+int leftCount2 = 0;
 int rightCount = 0;
+int rightCount2 = 0;
 
 typedef struct Player {
     Vector2 position;
@@ -58,6 +60,7 @@ typedef enum {
 // Funções principais
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected);
 void AddObstacle(ObstacleNode** head, Vector2 spawnPosition);
+void AddObstacle2(ObstacleNode** head, Vector2 spawnPosition);
 void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta);
 void RemoveInactiveObstacles(ObstacleNode** head);
 void DrawObstacles(ObstacleNode* head);
@@ -126,7 +129,8 @@ int main(void) {
             obstacleSpawnTimer += deltaTime;
             if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
                 obstacleSpawnTimer = 0.0f;
-                AddObstacle(&obstacleList, (Vector2) { 400, 100 });
+                AddObstacle(&obstacleList, (Vector2) { 500, 100 });
+                AddObstacle2(&obstacleList, (Vector2) { 500, -100 });
             }
 
             UpdateObstacles(obstacleList, envItems, envItemsLength, deltaTime);
@@ -274,6 +278,28 @@ void AddObstacle(ObstacleNode** head, Vector2 spawnPosition) {
     *head = newNode;
 }
 
+void AddObstacle2(ObstacleNode** head, Vector2 spawnPosition) {
+    ObstacleNode* newNode = (ObstacleNode*)malloc(sizeof(ObstacleNode));
+    if (newNode == NULL) return;
+
+    newNode->obstacle.position = spawnPosition;
+    newNode->obstacle.speed = (Vector2){ 0.0f, 0.0f };
+    newNode->obstacle.active = true;
+    newNode->obstacle.color = RED;
+
+    if (leftCount2 <= rightCount2) {
+        newNode->obstacle.movingLeft = true;
+        leftCount2++;
+    }
+    else {
+        newNode->obstacle.movingLeft = false;
+        rightCount2++;
+    }
+
+    newNode->next = *head;
+    *head = newNode;
+}
+
 void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta) {
     ObstacleNode* current = head;
 
@@ -287,6 +313,7 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
         current->obstacle.speed.y += G * delta;
         current->obstacle.position.y += current->obstacle.speed.y * delta;
 
+        // Movimento horizontal do obstáculo
         if (current->obstacle.movingLeft) {
             current->obstacle.position.x -= OBSTACLE_HORIZONTAL_SPD * delta;
         }
@@ -294,6 +321,7 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
             current->obstacle.position.x += OBSTACLE_HORIZONTAL_SPD * delta;
         }
 
+        // Verificação de colisão com os itens de ambiente
         for (int j = 0; j < envItemsLength; j++) {
             EnvItem* ei = &envItems[j];
             if (ei->blocking &&
@@ -308,6 +336,12 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
             }
         }
 
+        // Verificação para desativar o obstáculo se ele sair dos limites da tela
+        if (current->obstacle.position.x > 850 || current->obstacle.position.x < 150) {
+            current->obstacle.active = false;
+        }
+
+        // Desativar obstáculo se ele cair abaixo da tela
         if (!hitObstacle && current->obstacle.position.y > 600) {
             current->obstacle.active = false;
         }
@@ -315,6 +349,7 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
         current = current->next;
     }
 }
+
 
 void RemoveInactiveObstacles(ObstacleNode** head) {
     ObstacleNode* current = *head;
