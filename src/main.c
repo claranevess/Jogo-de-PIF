@@ -1,6 +1,8 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <stdlib.h>  // Para malloc e free
+#include <stdio.h> // arquivo de texto
+#include <string.h>  // Para strcpy()
 
 #define G 740
 #define PLAYER_JUMP_SPD 400.0f
@@ -13,6 +15,12 @@ int leftCount = 0;
 int leftCount2 = 0;
 int rightCount = 0;
 int rightCount2 = 0;
+char playerName[20] = "\0";  // Nome do jogador
+int nameIndex = 0;           // Índice para controlar o texto digitado
+bool nameEntered = false;    // Flag para saber se o nome foi digitado
+char key;
+bool save = false;
+
 
 typedef struct Player {
     Vector2 position;
@@ -67,6 +75,10 @@ void RemoveInactiveObstacles(ObstacleNode** head);
 void DrawObstacles(ObstacleNode* head);
 void FreeObstacleList(ObstacleNode* head);
 void DrawHealthBar(Player* player, int screenWidth);  // Função para desenhar a barra de vidas
+// Declarações das funções de arquivo
+void SavePlayerRecord(const char* filename, PlayerRecord* player);
+int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecords);
+void DisplayTopPlayers(PlayerRecord* records, int count);
 
 int main(void) {
     const int screenWidth = 800;
@@ -147,6 +159,7 @@ int main(void) {
                 player.position = (Vector2){ 400, 280 };
             }
         }
+        /*
         else if (currentState == GAMEOVER) {
             if (IsKeyPressed(KEY_ENTER)) {
                 currentState = MENU;
@@ -154,7 +167,7 @@ int main(void) {
                 player.speed = 0;
                 player.lives = 3;
             }
-        }
+        }*/
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -191,7 +204,60 @@ int main(void) {
         else if (currentState == GAMEOVER) {
             ClearBackground(RED);
             DrawText("GAME OVER", screenWidth / 2 - MeasureText("GAME OVER", 40) / 2, screenHeight / 2 - 60, 40, BLACK);
-            DrawText("Aperte ENTER para voltar para o menu", screenWidth / 2 - MeasureText("Aperte ENTER para voltar para o menu", 20) / 2, screenHeight / 2, 20, DARKGRAY);
+            DrawText("Digite seu nome e pressione ENTER", screenWidth / 2 - 200, screenHeight / 2, 20, DARKGRAY);
+            DrawText(playerName, screenWidth / 2 - 100, screenHeight / 2 + 40, 20, BLACK);
+
+            
+            // Capturar entrada do teclado para o nome do jogador
+            do {
+                key = GetCharPressed();  // Capturar o próximo caractere
+                // Somente permitir letras, números e espaços
+
+                if ((key >= 32) && (key <= 125) && (nameIndex < 19)) {
+                    playerName[nameIndex] = (char)key;
+                    nameIndex++;
+                    playerName[nameIndex] = '\0';  // Adicionar o terminador nulo
+                }
+
+                // Apagar o último caractere se BACKSPACE for pressionado
+                if (IsKeyPressed(KEY_BACKSPACE) && nameIndex > 0) {
+                    nameIndex--;
+                    playerName[nameIndex] = '\0';
+                }
+                
+            } while (key > 0);
+
+
+            if (currentState == GAMEOVER) {
+                if (IsKeyPressed(KEY_ENTER)) {
+                    save = true;
+                }
+            }
+
+            // Quando ENTER é pressionado, salvar o registro e voltar ao menu
+            if (save) {
+                PlayerRecord currentPlayer;
+                strcpy(currentPlayer.name, playerName);
+                currentPlayer.coinsCollected = coinsCollected;
+
+                SavePlayerRecord("records.txt", &currentPlayer);
+
+                // Exibir os melhores jogadores
+                PlayerRecord records[100];
+                int recordCount = LoadPlayerRecords("records.txt", records, 100);
+                DisplayTopPlayers(records, recordCount);
+
+                // Resetar variáveis e voltar ao menu
+                currentState = MENU;
+                player.position = (Vector2){ 400, 280 };
+                player.speed = 0;
+                player.lives = 3;
+                coinsCollected = 0;
+                nameEntered = false;
+                playerName[0] = '\0';
+                nameIndex = 0;
+                save = false;
+            }
         }
 
         EndDrawing();
@@ -432,3 +498,59 @@ void DrawHealthBar(Player* player, int screenWidth) {
         DrawRectangle(barX + i * (heartSize + barSpacing), barY, heartSize, heartSize, RED);
     }
 }
+
+void SavePlayerRecord(const char* filename, PlayerRecord* player) {
+    FILE* file = fopen(filename, "a");  // Use "a" mode to append to the file
+
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo para escrita.\n");
+        return;
+    }
+
+    // Escrever o nome do jogador e a quantidade de moedas coletadas
+    fprintf(file, "%s %d\n", player->name, player->coinsCollected);
+    fclose(file);
+}
+
+int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecords) {
+    FILE* file = fopen(filename, "r");  // "r" para leitura
+
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo para leitura.\n");
+        return 0;
+    }
+
+    int count = 0;
+    while (count < maxRecords && fscanf(file, "%19s %d", records[count].name, &records[count].coinsCollected) == 2) {
+        count++;
+    }
+
+    fclose(file);
+    return count;
+}
+
+
+void DisplayTopPlayers(PlayerRecord* records, int count) {
+    if (count == 0) {
+        printf("Nenhum registro encontrado.\n");
+        return;
+    }
+
+    // Ordenar os registros em ordem decrescente de moedas coletadas
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = i + 1; j < count; j++) {
+            if (records[j].coinsCollected > records[i].coinsCollected) {
+                PlayerRecord temp = records[i];
+                records[i] = records[j];
+                records[j] = temp;
+            }
+        }
+    }
+
+    // Exibir os 5 melhores jogadores
+    printf("Top Jogadores:\n");
+    for (int i = 0; i < count && i < 5; i++) {
+        printf("%d. %s - %d moedas\n", i + 1, records[i].name, records[i].coinsCollected);
+    }
+}
+
