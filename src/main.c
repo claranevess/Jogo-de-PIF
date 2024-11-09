@@ -19,6 +19,7 @@ typedef struct Player {
     float speed;
     bool canJump;
     int lives;  // Número de vidas do jogador
+    bool damaged;  // Novo campo para controlar o dano
 } Player;
 
 typedef struct EnvItem {
@@ -61,7 +62,7 @@ typedef enum {
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected);
 void AddObstacle(ObstacleNode** head, Vector2 spawnPosition);
 void AddObstacle2(ObstacleNode** head, Vector2 spawnPosition);
-void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta);
+void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta, Player* player, GameState* currentState);
 void RemoveInactiveObstacles(ObstacleNode** head);
 void DrawObstacles(ObstacleNode* head);
 void FreeObstacleList(ObstacleNode* head);
@@ -133,7 +134,7 @@ int main(void) {
                 AddObstacle2(&obstacleList, (Vector2) { 500, -100 });
             }
 
-            UpdateObstacles(obstacleList, envItems, envItemsLength, deltaTime);
+            UpdateObstacles(obstacleList, envItems, envItemsLength, deltaTime, &player, &currentState);
             RemoveInactiveObstacles(&obstacleList);
 
             camera.target = player.position;
@@ -300,8 +301,9 @@ void AddObstacle2(ObstacleNode** head, Vector2 spawnPosition) {
     *head = newNode;
 }
 
-void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta) {
+void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta, Player* player, GameState* currentState) {
     ObstacleNode* current = head;
+    bool playerHit = false;
 
     while (current != NULL) {
         if (!current->obstacle.active) {
@@ -337,7 +339,7 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
         }
 
         // Verificação para desativar o obstáculo se ele sair dos limites da tela
-        if (current->obstacle.position.x > 850 || current->obstacle.position.x < 150) {
+        if (current->obstacle.position.x > 850 || current->obstacle.position.x < -50) {
             current->obstacle.active = false;
         }
 
@@ -346,7 +348,28 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
             current->obstacle.active = false;
         }
 
+        // Verificar colisão com o jogador e aplicar dano
+        float playerRadius = 20.0f;
+        if (CheckCollisionCircles(player->position, playerRadius, current->obstacle.position, 10.0f)) {
+            if (!player->damaged) {
+                player->lives--;
+                player->damaged = true;
+
+                // Verificar se o jogador ficou sem vidas e mudar para o estado GAMEOVER
+                if (player->lives <= 0) {
+                    *currentState = GAMEOVER;
+                    return;  // Sair da função imediatamente
+                }
+            }
+            playerHit = true;
+        }
+
         current = current->next;
+    }
+
+    // Resetar o estado de dano se o jogador não estiver colidindo com nenhum obstáculo
+    if (!playerHit) {
+        player->damaged = false;
     }
 }
 
@@ -404,6 +427,7 @@ void DrawHealthBar(Player* player, int screenWidth) {
     int barSpacing = 10;
     int heartSize = 20;
 
+    // Desenhar corações para cada vida restante
     for (int i = 0; i < player->lives; i++) {
         DrawRectangle(barX + i * (heartSize + barSpacing), barY, heartSize, heartSize, RED);
     }
