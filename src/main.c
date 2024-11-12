@@ -20,7 +20,9 @@ int nameIndex = 0;           // Índice para controlar o texto digitado
 bool nameEntered = false;    // Flag para saber se o nome foi digitado
 char key;
 bool save = false;
+float coinScale = 0.1f; // Escala da moeda, ajuste conforme necessário.
 Texture2D backgroundgameplayy;
+Texture2D moedas;
 
 
 typedef struct Player {
@@ -40,7 +42,7 @@ typedef struct EnvItem {
 typedef struct coin {
     Vector2 position;
     bool collected;
-    Color color;
+	float radius; // Adicione o tamanho da moeda (ou use largura/altura da imagem)
 } coin;
 
 typedef struct Obstacle {
@@ -211,10 +213,12 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
 	}
 
 	for (int i = 0; i < coinsLength; i++) {
-		if (!coins[i].collected && CheckCollisionCircles(player->position, 20, coins[i].position, 10)) {
+		float coinRadius = (float)moedas.width / 4; // Ajuste o raio para metade da largura da imagem
+		if (!coins[i].collected && CheckCollisionCircles(player->position, 20, coins[i].position, coins[i].radius)) {
 			coins[i].collected = true;
 			(*coinsCollected)++;
 		}
+
 	}
 }
 
@@ -403,6 +407,7 @@ int main(void) {
 	backgroundgameplayy = LoadTexture("bin/Debug/backgroundgameplayy.png");
 	float scale = (float)screenWidth / backgroundgameplayy.width;
 
+	moedas = LoadTexture("bin/Debug/coin.png");
 
 	GameState currentState = MENU;
 
@@ -427,12 +432,16 @@ int main(void) {
 	};
 	int envItemsLength = sizeof(envItems) / sizeof(envItems[0]);
 
+	float coinRadius = (moedas.width * coinScale) / 2.0f;
+
 	coin coins[MAX_COINS] = {
-		{{ 350, 180 }, false, YELLOW},
-		{{ 690, 280 }, false, YELLOW},
-		{{510, 30}, false, YELLOW},
-		{{300, -45}, false, YELLOW}
+		{{ 350, 180 }, false, coinRadius},
+		{{ 690, 280 }, false, coinRadius},
+		{{ 510, 30 }, false, coinRadius},
+		{{ 300, -45 }, false, coinRadius}
 	};
+
+
 
 	ObstacleNode* obstacleList = NULL;
 	float obstacleSpawnTimer = 0.0f;
@@ -494,9 +503,7 @@ int main(void) {
 
 
 			// Ajuste para o efeito de paralaxe
-			//float parallaxX = -camera.target.x * 0.1f; // Movimentação mais sutil no eixo X
-			//float parallaxY = -camera.target.y * 0.05f; // Movimentação mais sutil no eixo Y
-
+			
 			float parallaxX = -camera.target.x * 0.1f;
 			float parallaxY = -camera.target.y * 0.05f - 30; // Ajuste maior para cima
 
@@ -511,9 +518,11 @@ int main(void) {
 
 			for (int i = 0; i < MAX_COINS; i++) {
 				if (!coins[i].collected) {
-					DrawCircle(coins[i].position.x, coins[i].position.y, 10, coins[i].color);
+					Vector2 drawPosition = { coins[i].position.x - (moedas.width * coinScale) / 2, coins[i].position.y - (moedas.height * coinScale) / 2 };
+					DrawTextureEx(moedas, drawPosition, 0.0f, coinScale, WHITE);
 				}
 			}
+
 
 			DrawCircle(player.position.x, player.position.y, 20, GREEN);
 			DrawObstacles(obstacleList);
@@ -652,6 +661,7 @@ int main(void) {
 
 	FreeObstacleList(obstacleList);
 	UnloadTexture(backgroundgameplayy);
+	UnloadTexture(moedas);
 	CloseWindow();
 	return 0;
 }
