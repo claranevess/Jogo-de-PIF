@@ -401,9 +401,8 @@ int main(void) {
 	InitWindow(screenWidth, screenHeight, "raylib - Game with Game Over Screen");
 
 	backgroundgameplayy = LoadTexture("bin/Debug/backgroundgameplayy.png");
-	if (backgroundgameplayy.id == 0) {
-		printf("Erro ao carregar a imagem de fundo!\n");
-	}
+	float scale = (float)screenWidth / backgroundgameplayy.width;
+
 
 	GameState currentState = MENU;
 
@@ -489,7 +488,22 @@ int main(void) {
 			DrawText("Use as setas do teclado para se mover e a barra de espaço para pular", screenWidth / 2 - MeasureText("Use as setas do teclado para se mover e a barra de espaço para pular", 20) / 2, screenHeight / 2 + 40, 20, DARKGRAY);
 		}
 		else if (currentState == GAMEPLAY) {
-			DrawTexture(backgroundgameplayy, 0, 0, WHITE);
+			// Definir a escala da imagem para cobrir a tela inteira
+			float scaleX = (float)screenWidth / backgroundgameplayy.width * 1.2f; // Aumente para 1.2f
+			float scaleY = (float)screenHeight / backgroundgameplayy.height * 1.2f; // Aumente para 1.2f
+
+
+			// Ajuste para o efeito de paralaxe
+			//float parallaxX = -camera.target.x * 0.1f; // Movimentação mais sutil no eixo X
+			//float parallaxY = -camera.target.y * 0.05f; // Movimentação mais sutil no eixo Y
+
+			float parallaxX = -camera.target.x * 0.1f;
+			float parallaxY = -camera.target.y * 0.05f - 30; // Ajuste maior para cima
+
+
+			// Desenhar a imagem de fundo com o efeito de paralaxe
+			DrawTextureEx(backgroundgameplayy, (Vector2) { parallaxX, parallaxY }, 0.0f, scaleX > scaleY ? scaleX : scaleY, WHITE);
+
 
 			BeginMode2D(camera);
 

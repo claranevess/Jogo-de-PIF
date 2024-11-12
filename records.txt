@@ -1,6 +1,0 @@
-maria 4
-julia 3
-laura 2
-zenilda 1
-clarinha 1
-oi 0
