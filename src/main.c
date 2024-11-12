@@ -20,6 +20,7 @@ int nameIndex = 0;           // Índice para controlar o texto digitado
 bool nameEntered = false;    // Flag para saber se o nome foi digitado
 char key;
 bool save = false;
+Texture2D backgroundgameplayy;
 
 
 typedef struct Player {
@@ -399,6 +400,11 @@ int main(void) {
 
 	InitWindow(screenWidth, screenHeight, "raylib - Game with Game Over Screen");
 
+	backgroundgameplayy = LoadTexture("bin/Debug/backgroundgameplayy.png");
+	if (backgroundgameplayy.id == 0) {
+		printf("Erro ao carregar a imagem de fundo!\n");
+	}
+
 	GameState currentState = MENU;
 
 	int coinsCollected = 0;  // Contador de moedas coletadas
@@ -410,7 +416,6 @@ int main(void) {
 	player.lives = 3;  // Jogador começa com 3 vidas
 
 	EnvItem envItems[] = {
-		{{ -250, 0, 1000, 400 }, 0, LIGHTGRAY },
 		{{ -300, 400, 1300, 300 }, 1, GRAY },
 		{{ 300, 200, 400, 10 }, 1, GRAY },
 		{{ 250, 300, 100, 10 }, 1, GRAY },
@@ -484,7 +489,7 @@ int main(void) {
 			DrawText("Use as setas do teclado para se mover e a barra de espaço para pular", screenWidth / 2 - MeasureText("Use as setas do teclado para se mover e a barra de espaço para pular", 20) / 2, screenHeight / 2 + 40, 20, DARKGRAY);
 		}
 		else if (currentState == GAMEPLAY) {
-			ClearBackground(DARKGRAY);
+			DrawTexture(backgroundgameplayy, 0, 0, WHITE);
 
 			BeginMode2D(camera);
 
@@ -632,6 +637,7 @@ int main(void) {
 	}
 
 	FreeObstacleList(obstacleList);
+	UnloadTexture(backgroundgameplayy);
 	CloseWindow();
 	return 0;
 }
