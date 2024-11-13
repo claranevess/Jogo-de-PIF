@@ -23,6 +23,9 @@ bool save = false;
 float coinScale = 0.1f; // Escala da moeda, ajuste conforme necessário.
 Texture2D backgroundgameplayy;
 Texture2D moedas;
+Texture2D concreto;
+Texture2D plataforma;
+Texture2D obstaculo;
 
 
 typedef struct Player {
@@ -363,16 +366,26 @@ void DrawObstacles(ObstacleNode* head) {
 	ObstacleNode* current = head;
 	while (current != NULL) {
 		if (current->obstacle.active) {
-			Vector2 vertices[3] = {
-				{current->obstacle.position.x, current->obstacle.position.y},
-				{current->obstacle.position.x - 10, current->obstacle.position.y + 20},
-				{current->obstacle.position.x + 10, current->obstacle.position.y + 20}
-			};
-			DrawTriangle(vertices[0], vertices[1], vertices[2], RED);
+			// Desenhar a textura do obstáculo
+			DrawTexturePro(
+				obstaculo,
+				(Rectangle) {
+				0, 0, obstaculo.width, obstaculo.height
+			},
+				(Rectangle) {
+				current->obstacle.position.x - 20, current->obstacle.position.y - 20, 30, 30
+			},
+				(Vector2) {
+				20, 20
+			},
+				0.0f,
+				WHITE
+			);
 		}
 		current = current->next;
 	}
 }
+
 
 // Função para liberar memória da lista de obstáculos
 void FreeObstacleList(ObstacleNode* head) {
@@ -408,6 +421,12 @@ int main(void) {
 	float scale = (float)screenWidth / backgroundgameplayy.width;
 
 	moedas = LoadTexture("bin/Debug/coin.png");
+
+	concreto = LoadTexture("bin/Debug/concreto.png");
+
+	plataforma = LoadTexture("bin/Debug/plataforma.png");
+
+	obstaculo = LoadTexture("bin/Debug/obstaculo.png");
 
 	GameState currentState = MENU;
 
@@ -516,6 +535,42 @@ int main(void) {
 
 			for (int i = 0; i < envItemsLength; i++) DrawRectangleRec(envItems[i].rect, envItems[i].color);
 
+			for (int i = 0; i < envItemsLength; i++) {
+				if (i == 0) {
+					// Desenhar a plataforma inicial com a textura de concreto
+					DrawTexturePro(
+						concreto,
+						(Rectangle) {
+						0, 0, concreto.width, concreto.height
+					}, // Fonte (imagem completa)
+						(Rectangle) {
+						envItems[i].rect.x, envItems[i].rect.y, envItems[i].rect.width, envItems[i].rect.height
+					}, // Destino (plataforma)
+						(Vector2) {
+						0, 0
+					}, // Origem (sem offset)
+						0.0f,               // Rotação
+						WHITE               // Cor (sem modificador)
+					);
+				}
+				else {
+					DrawTexturePro(
+						plataforma,
+						(Rectangle) {
+						0, 0, plataforma.width, plataforma.height
+					},
+						(Rectangle) {
+						envItems[i].rect.x, envItems[i].rect.y, envItems[i].rect.width, envItems[i].rect.height
+					},
+						(Vector2) {
+						0, 0
+					},
+						0.0f,
+						WHITE
+					);
+				}
+			}
+
 			for (int i = 0; i < MAX_COINS; i++) {
 				if (!coins[i].collected) {
 					Vector2 drawPosition = { coins[i].position.x - (moedas.width * coinScale) / 2, coins[i].position.y - (moedas.height * coinScale) / 2 };
@@ -532,7 +587,7 @@ int main(void) {
 			DrawHealthBar(&player, screenWidth);
 
 			// Desenha o contador de moedas na tela
-			DrawText(TextFormat("Moedas coletadas: %d", coinsCollected), 20, 50, 20, GOLD);
+			DrawText(TextFormat("Moedas coletadas: %d", coinsCollected), 20, 50, 20, BLACK);
 		}
 		else if (currentState == LEADERBOARD) {
 			ClearBackground(SKYBLUE);
@@ -662,6 +717,9 @@ int main(void) {
 	FreeObstacleList(obstacleList);
 	UnloadTexture(backgroundgameplayy);
 	UnloadTexture(moedas);
+	UnloadTexture(concreto);
+	UnloadTexture(plataforma);
+	UnloadTexture(obstaculo);
 	CloseWindow();
 	return 0;
 }
