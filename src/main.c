@@ -22,6 +22,7 @@ int nameIndex = 0;           // Índice para controlar o texto digitado
 bool nameEntered = false;    // Flag para saber se o nome foi digitado
 char key;
 bool save = false;
+int currentMap = 1; // Variável de controle de mapa
 float coinScale = 0.1f; // Escala da moeda
 int frameIndex = 0;       // Índice para a animação de corrida
 float frameTime = 0.0f;   // Tempo para trocar o frame
@@ -177,7 +178,36 @@ void DisplayTopPlayers(PlayerRecord* records, int count, int screenWidth) {
 void SavePlayerRecord(const char* filename, PlayerRecord* player);
 int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecords);
 
+//Função para alterar a fase
+void TransitionMap(GameState* currentState, int* currentMap, int nextMap) {
+	float fadeOutDuration = 1.0f;  // Tempo para o fade out
+	float fadeInDuration = 1.0f;   // Tempo para o fade in
+	float timer = 0.0f;
 
+	// Iniciar fade out
+	while (timer < fadeOutDuration) {
+		BeginDrawing();
+		ClearBackground(BLACK);
+		DrawText("Mudando de mapa...", 360, 220, 20, WHITE);
+		EndDrawing();
+		timer += GetFrameTime();
+	}
+
+	*currentMap = nextMap;  // Mudança para o próximo mapa
+
+	// Resetar timer e iniciar fade in
+	timer = 0.0f;
+	while (timer < fadeInDuration) {
+		float alpha = (1.0f - (timer / fadeInDuration)) * 255;
+		BeginDrawing();
+		ClearBackground(BLACK);
+		DrawText("Carregando mapa...", 360, 220, 20, Fade(WHITE, alpha));
+		EndDrawing();
+		timer += GetFrameTime();
+	}
+
+	*currentState = GAMEPLAY;  // Voltar ao estado de jogo
+}
 
 // Função de atualização do jogador
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected) {
@@ -234,6 +264,10 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
 
 			// Ajusta o player para ficar exatamente na borda superior da plataforma
 			player->position.y = ei->rect.y - playerAltura + 1; // Ajuste de 1 unidade para alinhar visualmente
+			if (ei->rect.y == -130)
+			{
+				TransitionMap(currentState, &currentMap, currentMap + 1);
+			}
 			break;
 		}
 	}
