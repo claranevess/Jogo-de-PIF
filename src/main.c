@@ -456,19 +456,19 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
 		// Verifica colisão com o jogador
 		float playerRadius = 20.0f;
 		if (CheckCollisionCircles(player->position, playerRadius, current->obstacle.position, 10.0f)) {
-			// Reduz a vida do jogador se ele não estiver danificado
 			if (!player->damaged) {
 				player->lives--;
 				player->damaged = true;
 
-				// Verifica se o jogador perdeu todas as vidas
 				if (player->lives <= 0) {
-					*currentState = GAMEOVER;  // Altera o estado do jogo para GAMEOVER
+					*currentState = GAMEOVER;
 					return;
 				}
 			}
-			playerHit = true;  // Marca que o jogador foi atingido
+			current->obstacle.active = false;  // Marcar o obstáculo como inativo
+			playerHit = true;
 		}
+
 
 		// Move para o próximo obstáculo na lista
 		current = current->next;
