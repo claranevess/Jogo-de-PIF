@@ -10,6 +10,8 @@
 #define MAX_COINS 6
 #define OBSTACLE_SPAWN_TIME 1.0f
 #define OBSTACLE_HORIZONTAL_SPD 100.0f
+#define PLAYER_SCALE 0.4f  // Ajuste a escala conforme necessário
+
 
 int leftCount = 0;
 int leftCount2 = 0;
@@ -20,12 +22,21 @@ int nameIndex = 0;           // Índice para controlar o texto digitado
 bool nameEntered = false;    // Flag para saber se o nome foi digitado
 char key;
 bool save = false;
-float coinScale = 0.1f; // Escala da moeda, ajuste conforme necessário.
+float coinScale = 0.1f; // Escala da moeda
+int frameIndex = 0;       // Índice para a animação de corrida
+float frameTime = 0.0f;   // Tempo para trocar o frame
+float frameSpeed = 0.1f;  // Velocidade da animação
+bool facingRight = true;  // Direção em que o player está olhando
 Texture2D backgroundgameplayy;
 Texture2D moedas;
 Texture2D concreto;
 Texture2D plataforma;
 Texture2D obstaculo;
+Texture2D playerparado;
+Texture2D playerpulando;
+Texture2D playerdireita[3];
+Texture2D playeresquerda[3];
+Texture2D vida;
 
 
 typedef struct Player {
@@ -34,6 +45,7 @@ typedef struct Player {
     bool canJump;
     int lives;  // Número de vidas do jogador
     bool damaged;  // Novo campo para controlar o dano
+	bool isJumping;
 } Player;
 
 typedef struct EnvItem {
@@ -45,7 +57,7 @@ typedef struct EnvItem {
 typedef struct coin {
     Vector2 position;
     bool collected;
-	float radius; // Adicione o tamanho da moeda (ou use largura/altura da imagem)
+	float radius; 
 } coin;
 
 typedef struct Obstacle {
@@ -169,61 +181,87 @@ int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecord
 
 // Função de atualização do jogador
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected) {
-	if (IsKeyDown(KEY_LEFT)) player->position.x -= PLAYER_HOR_SPD * delta;
-	if (IsKeyDown(KEY_RIGHT)) player->position.x += PLAYER_HOR_SPD * delta;
-	if (IsKeyDown(KEY_SPACE) && player->canJump) {
-		player->speed = -PLAYER_JUMP_SPD;
-		player->canJump = false;
+	// Altura aproximada do player (ajuste conforme necessário para seu asset)
+	float playerAltura = 40.0f;  // Defina de acordo com a altura real do asset
+
+	// Movimentação horizontal do player
+	if (IsKeyDown(KEY_LEFT)) {
+		player->position.x -= PLAYER_HOR_SPD * delta;
+		facingRight = false;
+
+		// Atualizar animação
+		frameTime += delta;
+		if (frameTime >= frameSpeed) {
+			frameIndex = (frameIndex + 1) % 3; // Ciclar entre os frames
+			frameTime = 0.0f;
+		}
+	}
+	else if (IsKeyDown(KEY_RIGHT)) {
+		player->position.x += PLAYER_HOR_SPD * delta;
+		facingRight = true;
+
+		// Atualizar animação
+		frameTime += delta;
+		if (frameTime >= frameSpeed) {
+			frameIndex = (frameIndex + 1) % 3; // Ciclar entre os frames
+			frameTime = 0.0f;
+		}
+	}
+	else {
+		// Resetar animação se o player estiver parado
+		frameIndex = 0;
 	}
 
-	bool hitObstacle = false;
-	float radius = 20.0f;
+	// Lógica de pulo
+	if (IsKeyPressed(KEY_SPACE) && player->canJump) {
+		player->speed = -PLAYER_JUMP_SPD;  // Impulso para pulo
+		player->canJump = false;           // Impede novo pulo no ar
+		player->isJumping = true;          // Define estado de pulo
+	}
 
+	// Aplicar gravidade
+	player->speed += G * delta;
+	player->position.y += player->speed * delta;
+
+	// Verificar colisão com o chão e posicionar o player na borda superior da plataforma
 	for (int i = 0; i < envItemsLength; i++) {
-		EnvItem* ei = envItems + i;
-		Vector2* p = &(player->position);
+		EnvItem* ei = &envItems[i];
+		// Verificar se a base do player está colidindo com a plataforma
+		if (ei->blocking && CheckCollisionPointRec((Vector2) { player->position.x, player->position.y + playerAltura }, ei->rect)) {
+			player->canJump = true;        // Permite pulo novamente
+			player->isJumping = false;     // Define que não está mais no ar
+			player->speed = 0;             // Zera a velocidade vertical
 
-		if (ei->blocking &&
-			ei->rect.x <= p->x &&
-			ei->rect.x + ei->rect.width >= p->x &&
-			ei->rect.y >= p->y + radius &&
-			ei->rect.y <= p->y + player->speed * delta + radius) {
-			hitObstacle = true;
-			player->speed = 0.0f;
-			p->y = ei->rect.y - radius;
+			// Ajusta o player para ficar exatamente na borda superior da plataforma
+			player->position.y = ei->rect.y - playerAltura + 1; // Ajuste de 1 unidade para alinhar visualmente
 			break;
 		}
 	}
 
-	if (!hitObstacle) {
-		player->position.y += player->speed * delta;
-		player->speed += G * delta;
-		player->canJump = false;
-	}
-	else {
-		player->canJump = true;
-	}
-
+	// Condição para quando o player cai fora da tela
 	if (player->position.y > 600) {
 		player->lives--;
 		if (player->lives <= 0) {
 			*currentState = GAMEOVER;
 		}
 		else {
+			// Reinicia a posição do player no centro da tela
 			player->position = (Vector2){ 400, 280 };
 			player->speed = 0;
 		}
 	}
 
+	// Colisão com moedas
 	for (int i = 0; i < coinsLength; i++) {
 		float coinRadius = (float)moedas.width / 4; // Ajuste o raio para metade da largura da imagem
 		if (!coins[i].collected && CheckCollisionCircles(player->position, 20, coins[i].position, coins[i].radius)) {
 			coins[i].collected = true;
 			(*coinsCollected)++;
 		}
-
 	}
 }
+
+
 
 // Função para adicionar um obstáculo que se move à esquerda ou à direita
 void AddObstacle(ObstacleNode** head, Vector2 spawnPosition) {
@@ -399,16 +437,16 @@ void FreeObstacleList(ObstacleNode* head) {
 
 // Função para desenhar a barra de vidas do jogador
 void DrawHealthBar(Player* player, int screenWidth) {
-	int barX = 20;
-	int barY = 20;
-	int barSpacing = 10;
-	int heartSize = 20;
+	int heartSize = 30;  // Tamanho da imagem de coração (ajuste conforme necessário)
+	int barX = 20;       // Posição X inicial
+	int barY = 20;       // Posição Y inicial
+	int heartSpacing = 10;  // Espaçamento entre os corações
 
 	for (int i = 0; i < player->lives; i++) {
-		DrawRectangle(barX + i * (heartSize + barSpacing), barY, heartSize, heartSize, RED);
+		// Desenhar a textura do coração para cada vida do jogador
+		DrawTextureEx(vida, (Vector2) { barX + i * (heartSize + heartSpacing), barY }, 0.0f, (float)heartSize / vida.width, WHITE);
 	}
 }
-
 
 
 int main(void) {
@@ -417,26 +455,33 @@ int main(void) {
 
 	InitWindow(screenWidth, screenHeight, "raylib - Game with Game Over Screen");
 
-	backgroundgameplayy = LoadTexture("bin/Debug/backgroundgameplayy.png");
+	backgroundgameplayy = LoadTexture("resources/backgroundgameplayy.png");
 	float scale = (float)screenWidth / backgroundgameplayy.width;
 
-	moedas = LoadTexture("bin/Debug/coin.png");
+	moedas = LoadTexture("resources/coin.png");
 
-	concreto = LoadTexture("bin/Debug/concreto.png");
+	concreto = LoadTexture("resources/concreto.png");
 
-	plataforma = LoadTexture("bin/Debug/plataforma.png");
+	plataforma = LoadTexture("resources/plataforma.png");
 
-	obstaculo = LoadTexture("bin/Debug/obstaculo.png");
+	obstaculo = LoadTexture("resources/obstaculo.png");
+
+	playerparado = LoadTexture("resources/playerparado.png");
+	playerpulando = LoadTexture("resources/playerpulando.png");
+	playerdireita[0] = LoadTexture("resources/playerdireta1.png");
+	playerdireita[1] = LoadTexture("resources/playerdireta2.png");
+	playerdireita[2] = LoadTexture("resources/playerdireta3.png");
+	playeresquerda[0] = LoadTexture("resources/playeresquerda1.png");
+	playeresquerda[1] = LoadTexture("resources/playeresquerda2.png");
+	playeresquerda[2] = LoadTexture("resources/playeresquerda3.png");
+
+	vida = LoadTexture("resources/vida.png");
 
 	GameState currentState = MENU;
 
 	int coinsCollected = 0;  // Contador de moedas coletadas
 
-	Player player = { 0 };
-	player.position = (Vector2){ 400, 280 };
-	player.speed = 0;
-	player.canJump = false;
-	player.lives = 3;  // Jogador começa com 3 vidas
+	
 
 	EnvItem envItems[] = {
 		{{ -300, 400, 1300, 300 }, 1, GRAY },
@@ -450,6 +495,28 @@ int main(void) {
 		{{-130, -130, 300, 10}, 1, GRAY}
 	};
 	int envItemsLength = sizeof(envItems) / sizeof(envItems[0]);
+
+	// Inicialização do player
+	Player player = { 0 };
+	player.position = (Vector2){ 400, envItems[0].rect.y };
+	player.speed = 0;
+	player.canJump = true;  // Definimos inicialmente como falso
+	player.lives = 3;
+	player.damaged = false;
+	player.isJumping = false;  // Não está pulando no início
+
+
+	// Verificar se o jogador está em contato com o chão na inicialização
+	for (int i = 0; i < envItemsLength; i++) {
+		EnvItem* ei = &envItems[i];
+		if (ei->blocking && CheckCollisionPointRec(player.position, ei->rect)) {
+			player.canJump = true;  // Atualizamos o estado para true se o player estiver no chão
+			player.speed = 0;
+			player.position.y = ei->rect.y;
+			break;
+		}
+	}
+
 
 	float coinRadius = (moedas.width * coinScale) / 2.0f;
 
@@ -472,6 +539,9 @@ int main(void) {
 	camera.zoom = 1.0f;
 
 	SetTargetFPS(60);
+
+	
+
 
 	while (!WindowShouldClose()) {
 		float deltaTime = GetFrameTime();
@@ -579,7 +649,25 @@ int main(void) {
 			}
 
 
-			DrawCircle(player.position.x, player.position.y, 20, GREEN);
+			// Desenhar o sprite correto baseado no estado do player
+			if (player.isJumping) {
+				// Exibir o asset de pulo independentemente do movimento horizontal
+				DrawTextureEx(playerpulando, (Vector2) { player.position.x - (playerpulando.width * PLAYER_SCALE) / 2, player.position.y - (playerpulando.height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
+			}
+			else if (IsKeyDown(KEY_LEFT)) {
+				// Player andando para a esquerda quando não está pulando
+				DrawTextureEx(playeresquerda[frameIndex], (Vector2) { player.position.x - (playeresquerda[frameIndex].width * PLAYER_SCALE) / 2, player.position.y - (playeresquerda[frameIndex].height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
+			}
+			else if (IsKeyDown(KEY_RIGHT)) {
+				// Player andando para a direita quando não está pulando
+				DrawTextureEx(playerdireita[frameIndex], (Vector2) { player.position.x - (playerdireita[frameIndex].width * PLAYER_SCALE) / 2, player.position.y - (playerdireita[frameIndex].height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
+			}
+			else {
+				// Player parado no chão
+				DrawTextureEx(playerparado, (Vector2) { player.position.x - (playerparado.width * PLAYER_SCALE) / 2, player.position.y - (playerparado.height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
+			}
+
+
 			DrawObstacles(obstacleList);
 
 			EndMode2D();
@@ -720,6 +808,13 @@ int main(void) {
 	UnloadTexture(concreto);
 	UnloadTexture(plataforma);
 	UnloadTexture(obstaculo);
+	UnloadTexture(playerparado);
+	UnloadTexture(playerpulando);
+	for (int i = 0; i < 3; i++) {
+		UnloadTexture(playerdireita[i]);
+		UnloadTexture(playeresquerda[i]);
+	}
+	UnloadTexture(vida);
 	CloseWindow();
 	return 0;
 }
