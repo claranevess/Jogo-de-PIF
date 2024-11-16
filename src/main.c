@@ -678,10 +678,10 @@ int main(void) {
 			// Ajusta a câmera para seguir o jogador
 			camera.target = player.position;
 
-			// Ajusta o zoom da câmera com a rolagem do mouse
-			camera.zoom += ((float)GetMouseWheelMove() * 0.05f);
-			if (camera.zoom > 3.0f) camera.zoom = 3.0f;
-			else if (camera.zoom < 0.25f) camera.zoom = 0.25f;
+			// // Ajusta o zoom da câmera com a rolagem do mouse
+			// camera.zoom += ((float)GetMouseWheelMove() * 0.05f);
+			// if (camera.zoom > 3.0f) camera.zoom = 3.0f;
+			// else if (camera.zoom < 0.25f) camera.zoom = 0.25f;
 
 			// Reseta o zoom e a posição do jogador ao pressionar R
 			if (IsKeyPressed(KEY_R)) {
