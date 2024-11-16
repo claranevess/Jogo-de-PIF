@@ -224,37 +224,6 @@ void SavePlayerRecord(const char* filename, PlayerRecord* player);
 int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecords);
 // Carrega registros de jogadores a partir de um arquivo
 
-// Função para transição entre mapas (fases)
-void TransitionMap(GameState* currentState, int* currentMap, int nextMap) {
-	float fadeOutDuration = 1.0f;  // Duração do efeito de fade out
-	float fadeInDuration = 1.0f;   // Duração do efeito de fade in
-	float timer = 0.0f;
-
-	// Iniciar o efeito de fade out
-	while (timer < fadeOutDuration) {
-		BeginDrawing();
-		ClearBackground(BLACK);
-		DrawText("Mudando de mapa...", 360, 220, 20, WHITE);
-		EndDrawing();
-		timer += GetFrameTime();
-	}
-
-	*currentMap = nextMap;  // Atualiza para o próximo mapa
-
-	// Resetar o timer e iniciar o efeito de fade in
-	timer = 0.0f;
-	while (timer < fadeInDuration) {
-		float alpha = (1.0f - (timer / fadeInDuration)) * 255;
-		BeginDrawing();
-		ClearBackground(BLACK);
-		DrawText("Carregando mapa...", 360, 220, 20, Fade(WHITE, alpha));
-		EndDrawing();
-		timer += GetFrameTime();
-	}
-
-	*currentState = GAMEPLAY;  // Retorna ao estado de gameplay
-}
-
 // Função para atualizar o estado do jogador
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected) {
 	float playerAltura = 40.0f;  // Altura aproximada do jogador
@@ -309,9 +278,6 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
 
 			// Ajustar a posição do jogador para ficar na borda superior da plataforma
 			player->position.y = ei->rect.y - playerAltura + 1;
-			if (ei->rect.y == -130) {
-				TransitionMap(currentState, &currentMap, currentMap + 1);
-			}
 			break;
 		}
 	}
@@ -549,7 +515,7 @@ void FreeObstacleList(ObstacleNode* head) {
 void DrawHealthBar(Player* player, int screenWidth) {
 	int heartSize = 30;       // Define o tamanho da imagem de coração
 	int barX = 20;            // Posição X inicial
-	int barY = 20;            // Posição Y inicial
+	int barY = 50;            // Posição Y inicial
 	int heartSpacing = 10;    // Espaçamento entre os corações
 
 	// Desenha um coração para cada vida do jogador
@@ -559,11 +525,11 @@ void DrawHealthBar(Player* player, int screenWidth) {
 }
 // Função principal do programa
 int main(void) {
-	const int screenWidth = 800;  // Largura da janela
-	const int screenHeight = 450; // Altura da janela
+	const int screenWidth = 1920;  // Largura da janela
+	const int screenHeight = 1080; // Altura da janela
 
 	// Inicializa a janela do jogo
-	InitWindow(screenWidth, screenHeight, "raylib - Game with Game Over Screen");
+	InitWindow(screenWidth, screenHeight, "Plataformia - a Spider-Man Game");
 
 	// Carregamento das texturas
 	backgroundgameplayy = LoadTexture("resources/backgroundgameplayy.png");
@@ -592,15 +558,20 @@ int main(void) {
 
 	// Definição dos itens do ambiente
 	EnvItem envItems[] = {
-		{{ -300, 400, 1300, 300 }, 1, GRAY },
-		{{ 300, 200, 400, 10 }, 1, GRAY },
-		{{ 250, 300, 100, 10 }, 1, GRAY },
-		{{ 650, 300, 100, 10 }, 1, GRAY },
-		{{ 250, 100, 100, 10 }, 1, GRAY },
-		{{ 650, 100, 100, 10 }, 1, GRAY },
-		{{ 450 - 37.5f, 50, 180, 10 }, 1, GRAY },
-		{{ 220, -30, 100, 10 }, 1, GRAY },
-		{{ -130, -130, 300, 10 }, 1, GRAY }
+		{{ -300, 400, 1300, 472 }, 1, BLACK },
+		{{ 300, 200, 400, 10 }, 1, BLACK },
+		{{ 250, 300, 100, 10 }, 1, BLACK },
+		{{ 650, 300, 100, 10 }, 1, BLACK },
+		{{ 250, 100, 100, 10 }, 1, BLACK },
+		{{ 650, 100, 100, 10 }, 1, BLACK },
+		{{ 450 - 37.5f, 50, 180, 10 }, 1, BLACK },
+		{{ 220, -30, 100, 10 }, 1, BLACK },
+		{{ -130, -130, 300, 10 }, 1, BLACK },
+		//duas em cima
+		{{-50,-230,100,10}, 1, BLACK}, 
+		{{150, -290, 100, 10}, 1, BLACK},
+		//boss
+		{{310, -390, 300, 10}, 1, BLACK}
 	};
 	int envItemsLength = sizeof(envItems) / sizeof(envItems[0]);  // Calcula o tamanho do array
 
@@ -792,7 +763,7 @@ int main(void) {
 			DrawHealthBar(&player, screenWidth);
 
 			// Exibe o contador de moedas coletadas no canto superior esquerdo
-			DrawText(TextFormat("Moedas coletadas: %d", coinsCollected), 20, 50, 20, BLACK);
+			DrawText(TextFormat("Moedas coletadas: %d", coinsCollected), 20, 80, 20, BLACK);
 		}
 
 		// Verifica se o estado atual do jogo é LEADERBOARD
