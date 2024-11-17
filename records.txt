@@ -1,4 +1,22 @@
-aaa 2
-aa 2
- aaaaa 2
+w 3
+w 3
+w 3
+w 3
+w 3
+w 3
+w 2
 a 2
+aaaaa 2
+aa 2
+rr 2
+aaa 2
+w 2
+w 2
+w 2
+w 2
+w 2
+w 2
+w 2
+w 2
+w 2
+w 1

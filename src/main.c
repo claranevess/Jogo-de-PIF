@@ -12,6 +12,9 @@
 #define OBSTACLE_SPAWN_TIME 1.0f      // Intervalo de tempo para surgimento de novos obstáculos
 #define OBSTACLE_HORIZONTAL_SPD 100.0f // Velocidade horizontal dos obstáculos
 #define PLAYER_SCALE 0.4f             // Escala para o tamanho do sprite do jogador
+#define PLAYER_WIDTH 20
+#define PLAYER_HEIGHT 40;
+#define BOSS_SCALE 0.4f
 
 // Variáveis globais para controle de contagem e estados
 int leftCount = 0;           // Contador de obstáculos movendo-se para a esquerda
@@ -44,6 +47,7 @@ Texture2D playerpulando;       // Textura do jogador pulando
 Texture2D playerdireita[3];    // Array de texturas para animação do jogador correndo para a direita
 Texture2D playeresquerda[3];   // Array de texturas para animação do jogador correndo para a esquerda
 Texture2D vida;                // Textura para o indicador de vida do jogador
+Texture2D vilao;
 
 // Estrutura para representar o jogador
 typedef struct Player {
@@ -53,7 +57,16 @@ typedef struct Player {
 	int lives;                // Número de vidas do jogador
 	bool damaged;             // Indica se o jogador está danificado (colidiu com um obstáculo)
 	bool isJumping;           // Indica se o jogador está pulando
+	bool dead;
 } Player;
+
+typedef struct Boss {
+	Vector2 position;
+	int health;
+	bool active;
+	bool defeated;
+	Rectangle rect;
+} Boss;
 
 // Estrutura para representar os itens do ambiente (plataformas)
 typedef struct EnvItem {
@@ -446,6 +459,24 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
 	}
 }
 
+void UpdateBoss(Boss* boss, Player* player, float deltaTime, GameState *currentState) {
+	if (boss->active && !boss->defeated) {
+		// Reduz vida do jogador ao colidir com o boss
+		if (CheckCollisionPointRec(player->position, (Rectangle) { boss->position.x - 0, boss->position.y - 20, 50, 60 })) {
+			if (!player->damaged) {
+				player->lives--;  // Reduz a vida do jogador
+				player->damaged = true;  // Marca que o jogador foi danificado
+				if (player->lives <= 0) {
+					*currentState = GAMEOVER;
+					return;
+				}
+			}
+			player->damaged = false;
+		}
+	}
+}
+
+
 // Função para remover obstáculos inativos
 void RemoveInactiveObstacles(ObstacleNode** head) {
 	ObstacleNode* current = *head;  // Aponta para o início da lista
@@ -523,6 +554,14 @@ void DrawHealthBar(Player* player, int screenWidth) {
 		DrawTextureEx(vida, (Vector2) { barX + i * (heartSize + heartSpacing), barY }, 0.0f, (float)heartSize / vida.width, WHITE);
 	}
 }
+
+void DrawBoss(Boss* boss) {
+	if (boss->active && !boss->defeated) {
+		DrawRectangle(boss->position.x - 0, boss->position.y - 20, 50, 60, RED);  // Desenha o boss
+		DrawText(TextFormat("Vida: %d", boss->health), boss->position.x - 30, boss->position.y - 40, 20, BLACK);  // Mostra a vida do boss
+		DrawTextureEx(vilao, (Vector2) { boss->position.x -30, boss->position.y -40}, 0.0f, BOSS_SCALE, WHITE);
+	}
+}
 // Função principal do programa
 int main(void) {
 	const int screenWidth = 1920;  // Largura da janela
@@ -549,8 +588,10 @@ int main(void) {
 	playeresquerda[0] = LoadTexture("resources/playeresquerda1.png");
 	playeresquerda[1] = LoadTexture("resources/playeresquerda2.png");
 	playeresquerda[2] = LoadTexture("resources/playeresquerda3.png");
+	vilao = LoadTexture("resources/boss.png");
 
 	vida = LoadTexture("resources/vida.png");  // Textura da vida do jogador
+
 
 	GameState currentState = MENU;  // Define o estado inicial do jogo como MENU
 
@@ -595,6 +636,16 @@ int main(void) {
 			break;
 		}
 	}
+	Boss boss = { 0 };
+	boss.position = (Vector2){ envItems[envItemsLength - 1].rect.x + envItems[envItemsLength - 1].rect.width / 2,
+						  envItems[envItemsLength - 1].rect.y - 50 };
+
+	boss.health = 100;
+	boss.active = true;
+	boss.defeated = false;
+	
+	DrawRectangle(boss.position.x, boss.position.y, 50, 50, RED);  // Representação visual do boss
+
 
 	// Definição do raio da moeda para colisão
 	float coinRadius = (moedas.width * coinScale) / 2.0f;
@@ -634,6 +685,8 @@ int main(void) {
 			// Atualiza o estado do jogador
 			UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState, &coinsCollected);
 
+			UpdateBoss(&boss, &player, deltaTime, &currentState);
+
 			// Incrementa o timer e gera novos obstáculos quando necessário
 			obstacleSpawnTimer += deltaTime;
 			if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
@@ -648,17 +701,6 @@ int main(void) {
 
 			// Ajusta a câmera para seguir o jogador
 			camera.target = player.position;
-
-			// // Ajusta o zoom da câmera com a rolagem do mouse
-			// camera.zoom += ((float)GetMouseWheelMove() * 0.05f);
-			// if (camera.zoom > 3.0f) camera.zoom = 3.0f;
-			// else if (camera.zoom < 0.25f) camera.zoom = 0.25f;
-
-			// Reseta o zoom e a posição do jogador ao pressionar R
-			if (IsKeyPressed(KEY_R)) {
-				camera.zoom = 1.0f;
-				player.position = (Vector2){ 400, 280 };
-			}
 		}
 
 		BeginDrawing();  // Inicia o processo de desenho na tela
@@ -684,7 +726,7 @@ int main(void) {
 
 			// Desenha a imagem de fundo com o efeito de paralaxe
 			DrawTextureEx(backgroundgameplayy, (Vector2) { parallaxX, parallaxY }, 0.0f, scaleX > scaleY ? scaleX : scaleY, WHITE);
-
+			
 			BeginMode2D(camera);  // Inicia o modo 2D, aplicando a posição da câmera
 
 			// Desenha cada item do ambiente como um retângulo
@@ -726,6 +768,7 @@ int main(void) {
 						WHITE
 					);
 				}
+				DrawBoss(&boss);
 			}
 
 			// Desenha todas as moedas que ainda não foram coletadas
@@ -782,6 +825,9 @@ int main(void) {
 				player.speed = 0;
 				player.lives = 3;
 				coinsCollected = 0;
+			}
+			if (boss.defeated) {
+				currentState = MENU;  // Troca para o estado de vitória
 			}
 		}
 
@@ -897,6 +943,7 @@ int main(void) {
 	UnloadTexture(obstaculo);
 	UnloadTexture(playerparado);
 	UnloadTexture(playerpulando);
+	UnloadTexture(vilao);
 	for (int i = 0; i < 3; i++) {
 		UnloadTexture(playerdireita[i]);
 		UnloadTexture(playeresquerda[i]);
