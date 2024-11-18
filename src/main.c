@@ -48,6 +48,7 @@ Texture2D playeresquerda[3];   // Array de texturas para animação do jogador c
 Texture2D vida;                // Textura para o indicador de vida do jogador
 Texture2D vilao;
 Texture2D teia;
+Texture2D menu;
 
 // Estrutura para representar o jogador
 typedef struct Player {
@@ -636,6 +637,7 @@ int main(void) {
 	web.speed = (Vector2){ 500.0f, 0.0f };  // Velocidade da teia
 
 	// Carregamento das texturas
+	menu = LoadTexture("resources/menu.png");
 	backgroundgameplayy = LoadTexture("resources/backgroundgameplayy.png");
 	float scale = (float)screenWidth / backgroundgameplayy.width;  // Escala do fundo
 
@@ -788,10 +790,35 @@ int main(void) {
 
 		// Verifica se o estado atual do jogo é MENU
 		if (currentState == MENU) {
-			ClearBackground(SKYBLUE);  // Define o fundo como azul claro no menu
-			DrawText("Bem-vindo ao Plataformia!", screenWidth / 2 - MeasureText("Bem-vindo ao Plataformia!", 20) / 2, screenHeight / 2 - 20, 20, BLACK);  // Mensagem de boas-vindas centralizada
-			DrawText("Aperte ENTER para começar", screenWidth / 2 - MeasureText("Aperte ENTER para começar", 20) / 2, screenHeight / 2 + 10, 20, DARKGRAY);  // Instrução para iniciar o jogo
-			DrawText("Use as setas do teclado para se mover e a barra de espaço para pular", screenWidth / 2 - MeasureText("Use as setas do teclado para se mover e a barra de espaço para pular", 20) / 2, screenHeight / 2 + 40, 20, DARKGRAY);  // Instruções de controle
+			float scaleX = (float)screenWidth / menu.width * 1.2f;
+			float scaleY = (float)screenHeight / menu.height * 1.2f;
+			DrawTextureEx(menu, (Vector2) { 0, 0 }, 0.0f, fmax(scaleX, scaleY), WHITE);
+
+			int fontSize = 30;  // Aumentando o tamanho da fonte
+
+			// Mensagem de boas-vindas centralizada e mais para cima
+			DrawText("Bem-vindo(a) ao Plataformia!", screenWidth / 2 - MeasureText("Bem-vindo ao Plataformia!", fontSize) / 2, screenHeight / 2 - 200, fontSize, BLACK);
+
+			// Introdução do jogo mais centralizada
+			int introX = screenWidth / 4;  // Aproximadamente 25% da largura da tela
+			DrawText("Ano: 2002, Cidade de Nova York.", introX - 150, screenHeight / 2 - 100, fontSize, BLACK);
+			DrawText("O jovem Peter Parker, nosso icônico Homem-Aranha,", introX - 300, screenHeight / 2 - 70, fontSize, BLACK);
+			DrawText("enfrenta seu maior desafio até agora.", introX - 300, screenHeight / 2 - 40, fontSize, BLACK);
+			DrawText("Em uma perseguição pelos arranha-céus de Manhattan,", introX - 300, screenHeight / 2 - 10, fontSize, BLACK);
+			DrawText("o perigoso e imprevisível Duende Verde está determinado", introX - 300, screenHeight / 2 + 20, fontSize, BLACK);
+			DrawText("a destruir o herói da cidade.", introX - 300, screenHeight / 2 + 50, fontSize, BLACK);
+
+			DrawText("Como jogador, você deve guiar o Homem-Aranha", introX - 300, screenHeight / 2 + 80, fontSize, BLACK);
+			DrawText("em uma corrida frenética pelos telhados de Nova York.", introX - 300, screenHeight / 2 + 110, fontSize, BLACK);
+			DrawText("Será que você consegue escapar das armadilhas", introX - 300, screenHeight / 2 + 140, fontSize, BLACK);
+			DrawText("do Duende Verde e salvar Nova York do caos?", introX - 300, screenHeight / 2 + 170, fontSize, BLACK);
+
+			// Instruções de comando mais centralizadas no lado direito
+			int commandX = screenWidth * 3 / 4;  // Aproximadamente 75% da largura da tela
+			DrawText("Aperte ENTER para começar", commandX - MeasureText("Aperte ENTER para começar", fontSize) / 2, screenHeight / 2 + 10, fontSize, BLACK);
+			DrawText("ou ESC para sair.", commandX - MeasureText("ou ESC para sair.", fontSize) / 2, screenHeight / 2 + 40, fontSize, BLACK);
+			DrawText("Use as setas do teclado para se mover", commandX - MeasureText("Use as setas do teclado para se mover", fontSize) / 2, screenHeight / 2 + 70, fontSize, BLACK);
+			DrawText("e a barra de espaço para pular!", commandX - MeasureText("e a barra de espaço para pular!", fontSize) / 2, screenHeight / 2 + 110, fontSize, BLACK);
 		}
 
 		// Verifica se o estado atual do jogo é GAMEPLAY
@@ -1036,6 +1063,7 @@ int main(void) {
 	UnloadTexture(vida);
 	UnloadTexture(vilao);
 	UnloadTexture(teia);
+	UnloadTexture(menu);
 	CloseWindow();
 	return 0;
 }
