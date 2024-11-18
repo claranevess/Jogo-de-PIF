@@ -21,20 +21,19 @@ int leftCount = 0;           // Contador de obstáculos movendo-se para a esquer
 int leftCount2 = 0;          // Contador adicional para outro tipo de obstáculo movendo-se para a esquerda
 int rightCount = 0;          // Contador de obstáculos movendo-se para a direita
 int rightCount2 = 0;         // Contador adicional para outro tipo de obstáculo movendo-se para a direita
-
 char playerName[20] = "\0";  // Nome do jogador (inicialmente vazio)
 int nameIndex = 0;           // Índice para controle da entrada de texto do nome
 bool nameEntered = false;    // Flag para saber se o nome do jogador foi inserido
 char key;                    // Variável para capturar a entrada de caracteres
 bool save = false;           // Flag para controle de salvamento do registro do jogador
-
 int currentMap = 1;          // Variável para controlar o mapa atual
 float coinScale = 0.1f;      // Escala para o tamanho das moedas
-
 int frameIndex = 0;          // Índice para controle da animação de corrida do jogador
 float frameTime = 0.0f;      // Tempo acumulado para troca de frames da animação
 float frameSpeed = 0.1f;     // Velocidade de troca dos frames da animação
 bool facingRight = true;     // Flag para indicar se o jogador está olhando para a direita
+float bossSpeed = 100.0f;     // Velocidade de movimento do boss
+bool movingLeft = true;       // Direção inicial do movimento
 
 // Texturas usadas no jogo
 Texture2D backgroundgameplayy; // Textura para o fundo do jogo
@@ -459,23 +458,52 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
 	}
 }
 
-void UpdateBoss(Boss* boss, Player* player, float deltaTime, GameState *currentState) {
+void UpdateBoss(Boss* boss, Player* player, EnvItem* envItems, int envItemsLength, float deltaTime, GameState* currentState) {
 	if (boss->active && !boss->defeated) {
-		// Reduz vida do jogador ao colidir com o boss
-		if (CheckCollisionPointRec(player->position, (Rectangle) { boss->position.x - 0, boss->position.y - 20, 50, 60 })) {
+		// Limites da plataforma do boss
+		float platformLeft = envItems[envItemsLength - 1].rect.x;
+		float platformRight = envItems[envItemsLength - 1].rect.x + envItems[envItemsLength - 1].rect.width;
+
+		// Velocidade e largura do boss
+		float bossSpeed = 100.0f;
+		float bossWidth = 50.0f;  // Largura do boss
+		static bool movingLeft = true;
+
+		// Movimento do boss, considerando sua largura
+		if (movingLeft) {
+			boss->position.x -= bossSpeed * deltaTime;
+			// Verifique se o boss atingiu o limite esquerdo da plataforma
+			if (boss->position.x <= platformLeft) {
+				movingLeft = false;
+			}
+		}
+		else {
+			boss->position.x += bossSpeed * deltaTime;
+			// Verifique se o boss atingiu o limite direito da plataforma, considerando sua largura
+			if (boss->position.x + bossWidth >= platformRight) {
+				movingLeft = true;
+			}
+		}
+
+		// Verificar colisão com o jogador
+		Rectangle bossRect = { boss->position.x, boss->position.y - 20, bossWidth, 60 };
+		if (CheckCollisionPointRec(player->position, bossRect)) {
 			if (!player->damaged) {
-				player->lives--;  // Reduz a vida do jogador
-				player->damaged = true;  // Marca que o jogador foi danificado
+				player->lives--;
+				player->damaged = true;
+
+				// Verificar se o jogador morreu
 				if (player->lives <= 0) {
 					*currentState = GAMEOVER;
 					return;
 				}
 			}
+		}
+		else {
 			player->damaged = false;
 		}
 	}
 }
-
 
 // Função para remover obstáculos inativos
 void RemoveInactiveObstacles(ObstacleNode** head) {
@@ -557,8 +585,8 @@ void DrawHealthBar(Player* player, int screenWidth) {
 
 void DrawBoss(Boss* boss) {
 	if (boss->active && !boss->defeated) {
-		DrawRectangle(boss->position.x - 0, boss->position.y - 20, 50, 60, RED);  // Desenha o boss
-		DrawText(TextFormat("Vida: %d", boss->health), boss->position.x - 30, boss->position.y - 40, 20, BLACK);  // Mostra a vida do boss
+		DrawRectangle(boss->position.x - 0, boss->position.y - 20, 30, 40, RED);  // Desenha o boss
+		DrawText(TextFormat("Vida: %d", boss->health), boss->position.x - 30, boss->position.y - 50, 20, BLACK);  // Mostra a vida do boss
 		DrawTextureEx(vilao, (Vector2) { boss->position.x -30, boss->position.y -40}, 0.0f, BOSS_SCALE, WHITE);
 	}
 }
@@ -654,8 +682,7 @@ int main(void) {
 	coin coins[MAX_COINS] = {
 		{{ 350, 180 }, false, coinRadius },
 		{{ 690, 280 }, false, coinRadius },
-		{{ 510, 30 }, false, coinRadius },
-		{{ 300, -45 }, false, coinRadius }
+		{{ 510, 30 }, false, coinRadius }
 	};
 
 	ObstacleNode* obstacleList = NULL;   // Ponteiro para a lista de obstáculos
@@ -685,7 +712,7 @@ int main(void) {
 			// Atualiza o estado do jogador
 			UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState, &coinsCollected);
 
-			UpdateBoss(&boss, &player, deltaTime, &currentState);
+			UpdateBoss(&boss, &player, envItems, envItemsLength, deltaTime, &currentState);
 
 			// Incrementa o timer e gera novos obstáculos quando necessário
 			obstacleSpawnTimer += deltaTime;
