@@ -47,6 +47,7 @@ Texture2D playerdireita[3];    // Array de texturas para animação do jogador c
 Texture2D playeresquerda[3];   // Array de texturas para animação do jogador correndo para a esquerda
 Texture2D vida;                // Textura para o indicador de vida do jogador
 Texture2D vilao;
+Texture2D teia;
 
 // Estrutura para representar o jogador
 typedef struct Player {
@@ -109,6 +110,12 @@ typedef enum {
 	GAMEOVER,                 // Estado de game over (fim de jogo)
 	LEADERBOARD               // Estado de leaderboard (placar de melhores jogadores)
 } GameState;
+
+typedef struct Web {
+	Vector2 position;
+	Vector2 speed;
+	bool active;
+} Web;
 
 // Declaração das funções principais do jogo
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected);
@@ -590,6 +597,32 @@ void DrawBoss(Boss* boss) {
 		DrawTextureEx(vilao, (Vector2) { boss->position.x -30, boss->position.y -40}, 0.0f, BOSS_SCALE, WHITE);
 	}
 }
+
+void UpdateWeb(Web* web, Boss* boss, float deltaTime) {
+	if (web->active) {
+		// Atualizar a posição da teia
+		web->position.x += web->speed.x * deltaTime;
+
+		// Verificar colisão com o boss
+		Rectangle bossRect = { boss->position.x, boss->position.y - 20, 50, 60 };
+		if (CheckCollisionPointRec(web->position, bossRect)) {
+			web->active = false;  // Desativar a teia após atingir o boss
+			boss->health -= 20;   // Reduzir a vida do boss
+
+			// Verificar se o boss foi derrotado
+			if (boss->health <= 0) {
+				boss->defeated = true;
+				boss->active = false;
+			}
+		}
+
+		// Desativar a teia se ela sair da tela
+		if (web->position.x < 0 || web->position.x > 1920) {
+			web->active = false;
+		}
+	}
+}
+
 // Função principal do programa
 int main(void) {
 	const int screenWidth = 1920;  // Largura da janela
@@ -597,6 +630,10 @@ int main(void) {
 
 	// Inicializa a janela do jogo
 	InitWindow(screenWidth, screenHeight, "Plataformia - a Spider-Man Game");
+
+	Web web = { 0 };
+	web.active = false;
+	web.speed = (Vector2){ 500.0f, 0.0f };  // Velocidade da teia
 
 	// Carregamento das texturas
 	backgroundgameplayy = LoadTexture("resources/backgroundgameplayy.png");
@@ -606,6 +643,7 @@ int main(void) {
 	concreto = LoadTexture("resources/concreto.png");
 	plataforma = LoadTexture("resources/plataforma.png");
 	obstaculo = LoadTexture("resources/obstaculo.png");
+	teia = LoadTexture("resources/teia.png");
 
 	// Carregamento das texturas do jogador
 	playerparado = LoadTexture("resources/playerparado.png");
@@ -712,7 +750,22 @@ int main(void) {
 			// Atualiza o estado do jogador
 			UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState, &coinsCollected);
 
+			// Lógica para atirar a teia
+			if (IsKeyPressed(KEY_T) && !web.active) {
+				web.position = player.position;  // A teia começa na posição do jogador
+				web.active = true;
+
+				// Define a direção da teia com base na direção que o jogador está olhando
+				if (facingRight) {
+					web.speed.x = 500.0f;  // Teia vai para a direita
+				}
+				else {
+					web.speed.x = -500.0f; // Teia vai para a esquerda
+				}
+			}
+
 			UpdateBoss(&boss, &player, envItems, envItemsLength, deltaTime, &currentState);
+			UpdateWeb(&web, &boss, deltaTime);
 
 			// Incrementa o timer e gera novos obstáculos quando necessário
 			obstacleSpawnTimer += deltaTime;
@@ -822,6 +875,11 @@ int main(void) {
 			else {
 				// Desenha o sprite do jogador parado
 				DrawTextureEx(playerparado, (Vector2) { player.position.x - (playerparado.width * PLAYER_SCALE) / 2, player.position.y - (playerparado.height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
+			}
+
+			// Desenhar a teia
+			if (web.active) {
+				DrawTextureEx(teia, web.position, 0.0f, 0.2f, WHITE);
 			}
 
 			// Desenha todos os obstáculos ativos na tela
@@ -976,6 +1034,8 @@ int main(void) {
 		UnloadTexture(playeresquerda[i]);
 	}
 	UnloadTexture(vida);
+	UnloadTexture(vilao);
+	UnloadTexture(teia);
 	CloseWindow();
 	return 0;
 }
