@@ -2,7 +2,7 @@
 
 ## ⭐️ Descrição
 
-"Plataformia" é um jogo de plataforma envolvente e desafiador, criado na linguagem C, que combina elementos clássicos de jogos como "Donkey Kong (1981)" e "Dino T-Rex" no universo do filme "Homem-Aranha". O jogo se desenrola em quatro telas distintas:
+"Plataformia" é um jogo de plataforma envolvente e desafiador, criado na linguagem C, que combina elementos clássicos de jogos como "Donkey Kong (1981)" e "Dino T-Rex" no universo do filme "Homem-Aranha". O jogo se desenrola em cinco telas distintas:
 
 ### Tela 1 
 Início do Jogo: O jogador navega por plataformas enfrentando obstáculos e coletando recompensas espalhadas. Esta fase introduz a mecânica básica do jogo, preparando o jogador para desafios futuros.
@@ -15,6 +15,9 @@ Desafios Mortais: Esta fase apresenta um novo background e plataformas que repre
 
 ### Tela 4 
 Fim de Jogo: A fase final exibe a pontuação do jogador, acompanhada de um botão para reiniciar ou sair.
+
+### Tela 5
+SSS
 
 ## ⚪️ Objetivo do jogo
 
