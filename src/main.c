@@ -48,7 +48,6 @@ Texture2D playeresquerda[3];   // Array de texturas para animação do jogador c
 Texture2D vida;                // Textura para o indicador de vida do jogador
 Texture2D vilao;
 Texture2D teia;
-Texture2D menu;
 
 // Estrutura para representar o jogador
 typedef struct Player {
@@ -109,7 +108,8 @@ typedef enum {
 	MENU,                     // Estado do menu principal
 	GAMEPLAY,                 // Estado de gameplay (jogo em andamento)
 	GAMEOVER,                 // Estado de game over (fim de jogo)
-	LEADERBOARD               // Estado de leaderboard (placar de melhores jogadores)
+	LEADERBOARD,               // Estado de leaderboard (placar de melhores jogadores)
+	VICTORY
 } GameState;
 
 typedef struct Web {
@@ -213,10 +213,18 @@ int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecord
 
 // Função para exibir os melhores jogadores (leaderboard)
 void DisplayTopPlayers(PlayerRecord* records, int count, int screenWidth) {
+	// Calcula o centro vertical da tela baseado em GetScreenHeight()
+	int screenHeight = GetScreenHeight(); // Obtém a altura atual da tela
+	int baseY = screenHeight / 2 - 100;   // Centraliza verticalmente o conteúdo principal
+	int spacing = 40;                     // Espaçamento entre as mensagens
+
 	// Verifica se há registros para exibir
 	if (count == 0) {
 		// Exibe uma mensagem se não houver registros
-		DrawText("Nenhum registro encontrado.", screenWidth / 2 - MeasureText("Nenhum registro encontrado.", 20) / 2, 150, 20, DARKGRAY);
+		DrawText("Nenhum registro encontrado.",
+			screenWidth / 2 - MeasureText("Nenhum registro encontrado.", 20) / 2,
+			baseY,
+			20, WHITE);
 		return;
 	}
 
@@ -224,17 +232,26 @@ void DisplayTopPlayers(PlayerRecord* records, int count, int screenWidth) {
 	qsort(records, count, sizeof(PlayerRecord), ComparePlayerRecords);
 
 	// Desenha o título da leaderboard
-	DrawText("Top Jogadores", screenWidth / 2 - MeasureText("Top Jogadores", 30) / 2, 50, 30, BLACK);
+	DrawText("Top Jogadores",
+		screenWidth / 2 - MeasureText("Top Jogadores", 30) / 2,
+		baseY - spacing * 2,
+		30, WHITE);
 
 	// Exibe os 5 melhores jogadores na tela
 	for (int i = 0; i < count && i < 5; i++) {
 		char text[50];
 		snprintf(text, sizeof(text), "%d. %s - %d moeda(s)", i + 1, records[i].name, records[i].coinsCollected);
-		DrawText(text, screenWidth / 2 - MeasureText(text, 20) / 2, 150 + i * 30, 20, DARKGRAY);
+		DrawText(text,
+			screenWidth / 2 - MeasureText(text, 20) / 2,
+			baseY + i * spacing,
+			20, WHITE);
 	}
 
 	// Mensagem para voltar ao menu
-	DrawText("Pressione ENTER para voltar ao menu", screenWidth / 2 - MeasureText("Pressione ENTER para voltar ao menu", 20) / 2, 400, 20, BLACK);
+	DrawText("Pressione ENTER para voltar ao menu",
+		screenWidth / 2 - MeasureText("Pressione ENTER para voltar ao menu", 20) / 2,
+		baseY + spacing * 7, // Posiciona abaixo da lista de jogadores
+		20, WHITE);
 }
 
 // Declarações das funções de manipulação de arquivo
@@ -599,7 +616,7 @@ void DrawBoss(Boss* boss) {
 	}
 }
 
-void UpdateWeb(Web* web, Boss* boss, float deltaTime) {
+void UpdateWeb(Web* web, Boss* boss, float deltaTime, GameState* currentState) {
 	if (web->active) {
 		// Atualizar a posição da teia
 		web->position.x += web->speed.x * deltaTime;
@@ -614,6 +631,7 @@ void UpdateWeb(Web* web, Boss* boss, float deltaTime) {
 			if (boss->health <= 0) {
 				boss->defeated = true;
 				boss->active = false;
+				*currentState = VICTORY;  // Trocar para o estado de vitória
 			}
 		}
 
@@ -637,7 +655,6 @@ int main(void) {
 	web.speed = (Vector2){ 500.0f, 0.0f };  // Velocidade da teia
 
 	// Carregamento das texturas
-	menu = LoadTexture("resources/menu.png");
 	backgroundgameplayy = LoadTexture("resources/backgroundgameplayy.png");
 	float scale = (float)screenWidth / backgroundgameplayy.width;  // Escala do fundo
 
@@ -767,7 +784,7 @@ int main(void) {
 			}
 
 			UpdateBoss(&boss, &player, envItems, envItemsLength, deltaTime, &currentState);
-			UpdateWeb(&web, &boss, deltaTime);
+			UpdateWeb(&web, &boss, deltaTime, &currentState);
 
 			// Incrementa o timer e gera novos obstáculos quando necessário
 			obstacleSpawnTimer += deltaTime;
@@ -790,35 +807,35 @@ int main(void) {
 
 		// Verifica se o estado atual do jogo é MENU
 		if (currentState == MENU) {
-			float scaleX = (float)screenWidth / menu.width * 1.2f;
-			float scaleY = (float)screenHeight / menu.height * 1.2f;
-			DrawTextureEx(menu, (Vector2) { 0, 0 }, 0.0f, fmax(scaleX, scaleY), WHITE);
+			//float scaleX = (float)screenWidth / menu.width * 1.2f;
+			//float scaleY = (float)screenHeight / menu.height * 1.2f;
+			ClearBackground(BLACK);
 
 			int fontSize = 30;  // Aumentando o tamanho da fonte
 
 			// Mensagem de boas-vindas centralizada e mais para cima
-			DrawText("Bem-vindo(a) ao Plataformia!", screenWidth / 2 - MeasureText("Bem-vindo ao Plataformia!", fontSize) / 2, screenHeight / 2 - 200, fontSize, BLACK);
+			DrawText("Bem-vindo(a) ao Plataformia!", screenWidth / 2 - MeasureText("Bem-vindo ao Plataformia!", fontSize) / 2, screenHeight / 2 - 200, fontSize, WHITE);
 
 			// Introdução do jogo mais centralizada
 			int introX = screenWidth / 4;  // Aproximadamente 25% da largura da tela
-			DrawText("Ano: 2002, Cidade de Nova York.", introX - 150, screenHeight / 2 - 100, fontSize, BLACK);
-			DrawText("O jovem Peter Parker, nosso icônico Homem-Aranha,", introX - 300, screenHeight / 2 - 70, fontSize, BLACK);
-			DrawText("enfrenta seu maior desafio até agora.", introX - 300, screenHeight / 2 - 40, fontSize, BLACK);
-			DrawText("Em uma perseguição pelos arranha-céus de Manhattan,", introX - 300, screenHeight / 2 - 10, fontSize, BLACK);
-			DrawText("o perigoso e imprevisível Duende Verde está determinado", introX - 300, screenHeight / 2 + 20, fontSize, BLACK);
-			DrawText("a destruir o herói da cidade.", introX - 300, screenHeight / 2 + 50, fontSize, BLACK);
+			DrawText("Ano: 2002, Cidade de Nova York.", introX - 150, screenHeight / 2 - 100, fontSize, WHITE);
+			DrawText("O jovem Peter Parker, nosso icônico Homem-Aranha,", introX - 300, screenHeight / 2 - 70, fontSize,WHITE);
+			DrawText("enfrenta seu maior desafio até agora.", introX - 300, screenHeight / 2 - 40, fontSize, WHITE);
+			DrawText("Em uma perseguição pelos arranha-céus de Manhattan,", introX - 300, screenHeight / 2 - 10, fontSize,WHITE);
+			DrawText("o perigoso e imprevisível Duende Verde está determinado", introX - 300, screenHeight / 2 + 20, fontSize, WHITE);
+			DrawText("a destruir o herói da cidade.", introX - 300, screenHeight / 2 + 50, fontSize, WHITE);
 
-			DrawText("Como jogador, você deve guiar o Homem-Aranha", introX - 300, screenHeight / 2 + 80, fontSize, BLACK);
-			DrawText("em uma corrida frenética pelos telhados de Nova York.", introX - 300, screenHeight / 2 + 110, fontSize, BLACK);
-			DrawText("Será que você consegue escapar das armadilhas", introX - 300, screenHeight / 2 + 140, fontSize, BLACK);
-			DrawText("do Duende Verde e salvar Nova York do caos?", introX - 300, screenHeight / 2 + 170, fontSize, BLACK);
+			DrawText("Como jogador, você deve guiar o Homem-Aranha", introX - 300, screenHeight / 2 + 80, fontSize, WHITE);
+			DrawText("em uma corrida frenética pelos telhados de Nova York.", introX - 300, screenHeight / 2 + 110, fontSize, WHITE);
+			DrawText("Será que você consegue escapar das armadilhas", introX - 300, screenHeight / 2 + 140, fontSize, WHITE);
+			DrawText("do Duende Verde e salvar Nova York do caos?", introX - 300, screenHeight / 2 + 170, fontSize, WHITE);
 
 			// Instruções de comando mais centralizadas no lado direito
 			int commandX = screenWidth * 3 / 4;  // Aproximadamente 75% da largura da tela
-			DrawText("Aperte ENTER para começar", commandX - MeasureText("Aperte ENTER para começar", fontSize) / 2, screenHeight / 2 + 10, fontSize, BLACK);
-			DrawText("ou ESC para sair.", commandX - MeasureText("ou ESC para sair.", fontSize) / 2, screenHeight / 2 + 40, fontSize, BLACK);
-			DrawText("Use as setas do teclado para se mover", commandX - MeasureText("Use as setas do teclado para se mover", fontSize) / 2, screenHeight / 2 + 70, fontSize, BLACK);
-			DrawText("e a barra de espaço para pular!", commandX - MeasureText("e a barra de espaço para pular!", fontSize) / 2, screenHeight / 2 + 110, fontSize, BLACK);
+			DrawText("Aperte ENTER para começar", commandX - MeasureText("Aperte ENTER para começar", fontSize) / 2, screenHeight / 2 + 10, fontSize, WHITE);
+			DrawText("ou ESC para sair.", commandX - MeasureText("ou ESC para sair.", fontSize) / 2, screenHeight / 2 + 40, fontSize, WHITE);
+			DrawText("Use as setas do teclado para se mover", commandX - MeasureText("Use as setas do teclado para se mover", fontSize) / 2, screenHeight / 2 + 70, fontSize, WHITE);
+			DrawText("e a barra de espaço para pular!", commandX - MeasureText("e a barra de espaço para pular!", fontSize) / 2, screenHeight / 2 + 110, fontSize, WHITE);
 		}
 
 		// Verifica se o estado atual do jogo é GAMEPLAY
@@ -923,32 +940,78 @@ int main(void) {
 
 		// Verifica se o estado atual do jogo é LEADERBOARD
 		else if (currentState == LEADERBOARD) {
-			ClearBackground(SKYBLUE);  // Define o fundo como azul claro
+			ClearBackground(BLACK);  // Cor de fundo da tela de leaderboard
 
 			// Carrega e exibe os registros dos melhores jogadores
 			PlayerRecord records[100];
 			int recordCount = LoadPlayerRecords("records.txt", records, 100);
-			DisplayTopPlayers(records, recordCount, screenWidth);  // Exibe os 5 melhores jogadores
+			DisplayTopPlayers(records, recordCount, screenWidth);
 
-			// Verifica se o jogador pressiona ENTER para voltar ao menu
+			
+			// Pressionar ENTER volta ao menu
 			if (IsKeyPressed(KEY_ENTER)) {
 				currentState = MENU;
-				player.position = (Vector2){ 400, 280 };  // Reseta a posição do jogador
+
+				// Resetar variáveis do jogo
+				player.position = (Vector2){ 400, 280 };
 				player.speed = 0;
 				player.lives = 3;
 				coinsCollected = 0;
+
+				// Resetar moedas
+				for (int i = 0; i < MAX_COINS; i++) {
+					coins[i].collected = false;
+				}
 			}
-			if (boss.defeated) {
-				currentState = MENU;  // Troca para o estado de vitória
 			}
-		}
+
+		else if (currentState == VICTORY) {
+			ClearBackground(BLACK);  // Cor de fundo da tela de vitória
+
+			// Exibe mensagem de vitória
+			int fontSize = 40;
+			DrawText("Parabéns, você venceu o Duende Verde!",
+				screenWidth / 2 - MeasureText("Parabéns, você venceu o Duende Verde!", fontSize) / 2,
+				screenHeight / 2 - 50, fontSize, WHITE);
+
+			// Solicita nome do jogador
+			DrawText("Digite seu nome e pressione ENTER", screenWidth / 2 - 200, screenHeight / 2, 20, WHITE);
+			DrawText(playerName, screenWidth / 2 - 100, screenHeight / 2 + 40, 20, WHITE);
+
+			// Captura entrada do teclado para o nome do jogador
+			key = GetCharPressed();
+			if ((key >= 32) && (key <= 125) && (nameIndex < 19)) {
+				playerName[nameIndex] = (char)key;
+				nameIndex++;
+				playerName[nameIndex] = '\0';  // Adiciona o terminador nulo
+			}
+
+			if (IsKeyPressed(KEY_BACKSPACE) && nameIndex > 0) {
+				nameIndex--;
+				playerName[nameIndex] = '\0';
+			}
+
+			// Quando ENTER é pressionado, salvar o nome e mudar para LEADERBOARD
+			if (IsKeyPressed(KEY_ENTER) && nameIndex > 0) {
+				PlayerRecord currentPlayer;
+				strcpy(currentPlayer.name, playerName);
+				currentPlayer.coinsCollected = coinsCollected;
+
+				SavePlayerRecord("records.txt", &currentPlayer);  // Salvar o registro do jogador
+				currentState = LEADERBOARD;  // Troca para o estado LEADERBOARD
+
+				// Reseta variáveis
+				playerName[0] = '\0';
+				nameIndex = 0;
+			}
+}
 
 		// Verifica se o estado atual do jogo é GAMEOVER
 		else if (currentState == GAMEOVER) {
-			ClearBackground(RED);  // Define o fundo como vermelho
-			DrawText("GAME OVER", screenWidth / 2 - MeasureText("GAME OVER", 40) / 2, screenHeight / 2 - 60, 40, BLACK);  // Exibe a mensagem de Game Over
-			DrawText("Digite seu nome e pressione ENTER", screenWidth / 2 - 200, screenHeight / 2, 20, DARKGRAY);  // Instrução para o jogador
-			DrawText(playerName, screenWidth / 2 - 100, screenHeight / 2 + 40, 20, BLACK);  // Exibe o nome do jogador digitado até o momento
+			ClearBackground(BLACK);  // Define o fundo como vermelho
+			DrawText("GAME OVER", screenWidth / 2 - MeasureText("GAME OVER", 40) / 2, screenHeight / 2 - 60, 40, WHITE);  // Exibe a mensagem de Game Over
+			DrawText("Digite seu nome e pressione ENTER", screenWidth / 2 - 200, screenHeight / 2, 20, WHITE);  // Instrução para o jogador
+			DrawText(playerName, screenWidth / 2 - 100, screenHeight / 2 + 40, 20, WHITE);  // Exibe o nome do jogador digitado até o momento
 
 			// Capturar entrada do teclado para o nome do jogador
 			do {
@@ -997,7 +1060,7 @@ int main(void) {
 
 
 			else if (currentState == LEADERBOARD) {
-				ClearBackground(SKYBLUE);
+				ClearBackground(BLACK);
 
 				// Carregar e exibir os melhores jogadores
 				PlayerRecord records[100];
@@ -1063,7 +1126,6 @@ int main(void) {
 	UnloadTexture(vida);
 	UnloadTexture(vilao);
 	UnloadTexture(teia);
-	UnloadTexture(menu);
 	CloseWindow();
 	return 0;
 }
