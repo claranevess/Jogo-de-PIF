@@ -1,62 +1,62 @@
 #include "raylib.h"
 #include "raymath.h"
-#include <stdlib.h>  // Para malloc e free
-#include <stdio.h> // arquivo de texto
-#include <string.h>  // Para strcpy()
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 // Constantes para o jogo
-#define G 740                         // Gravidade aplicada ao jogador e obstáculos
-#define PLAYER_JUMP_SPD 400.0f        // Velocidade de pulo do jogador
-#define PLAYER_HOR_SPD 200.0f         // Velocidade horizontal do jogador
-#define MAX_COINS 6                   // Número máximo de moedas no jogo
-#define OBSTACLE_SPAWN_TIME 1.0f      // Intervalo de tempo para surgimento de novos obstáculos
-#define OBSTACLE_HORIZONTAL_SPD 100.0f // Velocidade horizontal dos obstáculos
-#define PLAYER_SCALE 0.4f             // Escala para o tamanho do sprite do jogador
+#define G 740
+#define PLAYER_JUMP_SPD 400.0f
+#define PLAYER_HOR_SPD 200.0f
+#define MAX_COINS 6
+#define OBSTACLE_SPAWN_TIME 1.0f
+#define OBSTACLE_HORIZONTAL_SPD 100.0f
+#define PLAYER_SCALE 0.4f
 #define PLAYER_WIDTH 20
 #define PLAYER_HEIGHT 40;
 #define BOSS_SCALE 0.4f
 
 // Variáveis globais para controle de contagem e estados
-int leftCount = 0;           // Contador de obstáculos movendo-se para a esquerda
-int leftCount2 = 0;          // Contador adicional para outro tipo de obstáculo movendo-se para a esquerda
-int rightCount = 0;          // Contador de obstáculos movendo-se para a direita
-int rightCount2 = 0;         // Contador adicional para outro tipo de obstáculo movendo-se para a direita
-char playerName[20] = "\0";  // Nome do jogador (inicialmente vazio)
-int nameIndex = 0;           // Índice para controle da entrada de texto do nome
-bool nameEntered = false;    // Flag para saber se o nome do jogador foi inserido
-char key;                    // Variável para capturar a entrada de caracteres
-bool save = false;           // Flag para controle de salvamento do registro do jogador
-int currentMap = 1;          // Variável para controlar o mapa atual
-float coinScale = 0.1f;      // Escala para o tamanho das moedas
-int frameIndex = 0;          // Índice para controle da animação de corrida do jogador
-float frameTime = 0.0f;      // Tempo acumulado para troca de frames da animação
-float frameSpeed = 0.1f;     // Velocidade de troca dos frames da animação
-bool facingRight = true;     // Flag para indicar se o jogador está olhando para a direita
-float bossSpeed = 100.0f;     // Velocidade de movimento do boss
-bool movingLeft = true;       // Direção inicial do movimento
+int leftCount = 0;
+int leftCount2 = 0;
+int rightCount = 0;
+int rightCount2 = 0;
+char playerName[20] = "\0";
+int nameIndex = 0;
+bool nameEntered = false;
+char key;
+bool save = false;
+int currentMap = 1;
+float coinScale = 0.1f;
+int frameIndex = 0;
+float frameTime = 0.0f;
+float frameSpeed = 0.1f;
+bool facingRight = true;
+float bossSpeed = 100.0f;
+bool movingLeft = true;
 
 // Texturas usadas no jogo
-Texture2D backgroundgameplayy; // Textura para o fundo do jogo
-Texture2D moedas;              // Textura para as moedas
-Texture2D concreto;            // Textura para o chão de concreto
-Texture2D plataforma;          // Textura para as plataformas
-Texture2D obstaculo;           // Textura para os obstáculos
-Texture2D playerparado;        // Textura do jogador parado
-Texture2D playerpulando;       // Textura do jogador pulando
-Texture2D playerdireita[3];    // Array de texturas para animação do jogador correndo para a direita
-Texture2D playeresquerda[3];   // Array de texturas para animação do jogador correndo para a esquerda
-Texture2D vida;                // Textura para o indicador de vida do jogador
+Texture2D backgroundgameplayy;
+Texture2D moedas;              
+Texture2D concreto;           
+Texture2D plataforma;         
+Texture2D obstaculo;           
+Texture2D playerparado;        
+Texture2D playerpulando;      
+Texture2D playerdireita[3];   
+Texture2D playeresquerda[3];   
+Texture2D vida;               
 Texture2D vilao;
 Texture2D teia;
 
-// Estrutura para representar o jogador
+// Estruturas do jogo
 typedef struct Player {
-	Vector2 position;         // Posição do jogador
-	float speed;              // Velocidade vertical (para gravidade e pulo)
-	bool canJump;             // Indica se o jogador pode pular
-	int lives;                // Número de vidas do jogador
-	bool damaged;             // Indica se o jogador está danificado (colidiu com um obstáculo)
-	bool isJumping;           // Indica se o jogador está pulando
+	Vector2 position;         
+	float speed;              
+	bool canJump;            
+	int lives;                
+	bool damaged;             
+	bool isJumping;          
 	bool dead;
 } Player;
 
@@ -67,177 +67,109 @@ typedef struct Boss {
 	bool defeated;
 	Rectangle rect;
 } Boss;
-
-// Estrutura para representar os itens do ambiente (plataformas)
 typedef struct EnvItem {
-	Rectangle rect;           // Retângulo que define posição e tamanho do item
-	int blocking;             // Indica se o item bloqueia o jogador (1 = sim, 0 = não)
-	Color color;              // Cor do item (usado para desenhar)
+	Rectangle rect;           
+	int blocking;            
+	Color color;             
 } EnvItem;
-
-// Estrutura para representar uma moeda
 typedef struct coin {
-	Vector2 position;         // Posição da moeda
-	bool collected;           // Indica se a moeda foi coletada
-	float radius;             // Raio da moeda (para colisão)
+	Vector2 position;
+	bool collected;
+	float radius;
 } coin;
-
-// Estrutura para representar um obstáculo
 typedef struct Obstacle {
-	Vector2 position;         // Posição do obstáculo
-	Vector2 speed;            // Velocidade do obstáculo
-	bool active;              // Indica se o obstáculo está ativo
-	bool movingLeft;          // Indica se o obstáculo está se movendo para a esquerda
-	Color color;              // Cor do obstáculo (usado para desenhar)
+	Vector2 position;        
+	Vector2 speed;            
+	bool active;             
+	bool movingLeft;          
+	Color color;
 } Obstacle;
-
-// Estrutura para um nó da lista encadeada de obstáculos
 typedef struct ObstacleNode {
-	Obstacle obstacle;        // Obstáculo armazenado no nó
-	struct ObstacleNode* next; // Ponteiro para o próximo nó
+	Obstacle obstacle;
+	struct ObstacleNode* next;
 } ObstacleNode;
-
-// Estrutura para armazenar o registro de um jogador
 typedef struct {
-	char name[20];            // Nome do jogador (máximo de 20 caracteres)
-	int coinsCollected;       // Número de moedas coletadas pelo jogador
+	char name[20];
+	int coinsCollected;
 } PlayerRecord;
-
-// Enumeração para definir os diferentes estados do jogo
 typedef enum {
-	MENU,                     // Estado do menu principal
-	GAMEPLAY,                 // Estado de gameplay (jogo em andamento)
-	GAMEOVER,                 // Estado de game over (fim de jogo)
-	LEADERBOARD,               // Estado de leaderboard (placar de melhores jogadores)
+	MENU,
+	GAMEPLAY,                
+	GAMEOVER,                 
+	LEADERBOARD,
 	VICTORY
 } GameState;
-
 typedef struct Web {
 	Vector2 position;
 	Vector2 speed;
 	bool active;
 } Web;
 
+
 // Declaração das funções principais do jogo
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected);
-// Atualiza o estado do jogador (movimentação, colisões, coleta de moedas)
-
 void AddObstacle(ObstacleNode** head, Vector2 spawnPosition);
-// Adiciona um obstáculo que se move para a esquerda ou para a direita à lista de obstáculos
-
 void AddObstacle2(ObstacleNode** head, Vector2 spawnPosition);
-// Adiciona um segundo tipo de obstáculo com comportamento diferente à lista
-
 void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta, Player* player, GameState* currentState);
-// Atualiza a posição e o estado dos obstáculos (movimentação e colisões)
-
 void RemoveInactiveObstacles(ObstacleNode** head);
-// Remove obstáculos que estão fora da tela ou que não estão mais ativos
-
 void DrawObstacles(ObstacleNode* head);
-// Desenha os obstáculos ativos na tela
-
 void FreeObstacleList(ObstacleNode* head);
-// Libera a memória alocada para a lista de obstáculos
-
 void DrawHealthBar(Player* player, int screenWidth);
-// Desenha a barra de vida do jogador na tela
-
-// Declarações das funções para manipulação de arquivo
 void SavePlayerRecord(const char* filename, PlayerRecord* player);
-// Salva o registro do jogador (nome e número de moedas coletadas) em um arquivo
-
 int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecords);
-// Carrega registros de jogadores de um arquivo e retorna o número de registros carregados
+int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecords);
+void SavePlayerRecord(const char* filename, PlayerRecord* player);
 
-// Função para comparar dois registros de jogadores
 int ComparePlayerRecords(const void* a, const void* b) {
 	PlayerRecord* recordA = (PlayerRecord*)a;
 	PlayerRecord* recordB = (PlayerRecord*)b;
-	// Ordena em ordem decrescente com base nas moedas coletadas
 	return recordB->coinsCollected - recordA->coinsCollected;
 }
-
-// Função para salvar o registro do jogador no arquivo
 void SavePlayerRecord(const char* filename, PlayerRecord* player) {
-	// Carregar registros existentes do arquivo para a memória
-	PlayerRecord records[100];  // Array para armazenar até 100 registros
+	PlayerRecord records[100];
 	int recordCount = LoadPlayerRecords(filename, records, 100);
-
-	// Adicionar o novo registro à lista
 	records[recordCount] = *player;
 	recordCount++;
-
-	// Ordenar a lista de registros em ordem decrescente de moedas coletadas
 	qsort(records, recordCount, sizeof(PlayerRecord), ComparePlayerRecords);
-
-	// Abrir o arquivo para escrita (sobrescrever o arquivo existente)
 	FILE* file = fopen(filename, "w");
-
 	if (file == NULL) {
 		printf("Erro ao abrir o arquivo para escrita.\n");
 		return;
 	}
-
-	// Escrever todos os registros ordenados no arquivo
 	for (int i = 0; i < recordCount; i++) {
 		fprintf(file, "%s %d\n", records[i].name, records[i].coinsCollected);
 	}
-
-	// Fechar o arquivo após a escrita
 	fclose(file);
 }
-
-// Função para carregar registros de jogadores de um arquivo
 int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecords) {
-	// Abrir o arquivo para leitura
 	FILE* file = fopen(filename, "r");
-
 	if (file == NULL) {
 		printf("Erro ao abrir o arquivo para leitura.\n");
-		return 0;  // Retorna 0 se não conseguiu abrir o arquivo
+		return 0;
 	}
-
-	int count = 0;  // Contador para o número de registros carregados
-
-	// Ler o nome e o número de moedas coletadas de cada registro
-	// Limita a leitura a 19 caracteres para o nome (devido ao tamanho máximo do array)
+	int count = 0;
 	while (count < maxRecords && fscanf(file, "%19s %d", records[count].name, &records[count].coinsCollected) == 2) {
-		count++;  // Incrementa o contador se a leitura foi bem-sucedida
+		count++;
 	}
-
-	// Fechar o arquivo após a leitura
 	fclose(file);
-	return count;  // Retorna o número de registros carregados
+	return count;
 }
-
-// Função para exibir os melhores jogadores (leaderboard)
 void DisplayTopPlayers(PlayerRecord* records, int count, int screenWidth) {
-	// Calcula o centro vertical da tela baseado em GetScreenHeight()
-	int screenHeight = GetScreenHeight(); // Obtém a altura atual da tela
-	int baseY = screenHeight / 2 - 100;   // Centraliza verticalmente o conteúdo principal
-	int spacing = 40;                     // Espaçamento entre as mensagens
-
-	// Verifica se há registros para exibir
+	int screenHeight = GetScreenHeight();
+	int baseY = screenHeight / 2 - 100;
+	int spacing = 40;
 	if (count == 0) {
-		// Exibe uma mensagem se não houver registros
 		DrawText("Nenhum registro encontrado.",
 			screenWidth / 2 - MeasureText("Nenhum registro encontrado.", 20) / 2,
 			baseY,
 			20, WHITE);
 		return;
 	}
-
-	// Ordena os registros em ordem decrescente usando qsort
 	qsort(records, count, sizeof(PlayerRecord), ComparePlayerRecords);
-
-	// Desenha o título da leaderboard
 	DrawText("Top Jogadores",
 		screenWidth / 2 - MeasureText("Top Jogadores", 30) / 2,
 		baseY - spacing * 2,
 		30, WHITE);
-
-	// Exibe os 5 melhores jogadores na tela
 	for (int i = 0; i < count && i < 5; i++) {
 		char text[50];
 		snprintf(text, sizeof(text), "%d. %s - %d moeda(s)", i + 1, records[i].name, records[i].coinsCollected);
@@ -246,93 +178,62 @@ void DisplayTopPlayers(PlayerRecord* records, int count, int screenWidth) {
 			baseY + i * spacing,
 			20, WHITE);
 	}
-
-	// Mensagem para voltar ao menu
 	DrawText("Pressione ENTER para voltar ao menu",
 		screenWidth / 2 - MeasureText("Pressione ENTER para voltar ao menu", 20) / 2,
-		baseY + spacing * 7, // Posiciona abaixo da lista de jogadores
-		20, WHITE);
+		baseY + spacing * 7, 20, WHITE);
 }
 
-// Declarações das funções de manipulação de arquivo
-void SavePlayerRecord(const char* filename, PlayerRecord* player);
-// Salva o registro do jogador no arquivo
 
-int LoadPlayerRecords(const char* filename, PlayerRecord* records, int maxRecords);
-// Carrega registros de jogadores a partir de um arquivo
-
-// Função para atualizar o estado do jogador
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected) {
-	float playerAltura = 40.0f;  // Altura aproximada do jogador
-
-	// Movimentação para a esquerda
+	float playerAltura = 40.0f;
 	if (IsKeyDown(KEY_LEFT)) {
 		player->position.x -= PLAYER_HOR_SPD * delta;
 		facingRight = false;
-
-		// Atualizar a animação de corrida
 		frameTime += delta;
 		if (frameTime >= frameSpeed) {
-			frameIndex = (frameIndex + 1) % 3;  // Cicla entre os frames
+			frameIndex = (frameIndex + 1) % 3;
 			frameTime = 0.0f;
 		}
 	}
-	// Movimentação para a direita
 	else if (IsKeyDown(KEY_RIGHT)) {
 		player->position.x += PLAYER_HOR_SPD * delta;
 		facingRight = true;
-
-		// Atualizar a animação de corrida
 		frameTime += delta;
 		if (frameTime >= frameSpeed) {
-			frameIndex = (frameIndex + 1) % 3;  // Cicla entre os frames
+			frameIndex = (frameIndex + 1) % 3;
 			frameTime = 0.0f;
 		}
 	}
 	else {
-		// Resetar a animação quando o jogador está parado
 		frameIndex = 0;
 	}
-
-	// Lógica para o pulo do jogador
 	if (IsKeyPressed(KEY_SPACE) && player->canJump) {
-		player->speed = -PLAYER_JUMP_SPD;  // Impulso para o pulo
-		player->canJump = false;           // Não permite pular novamente no ar
-		player->isJumping = true;          // Define o estado como pulando
+		player->speed = -PLAYER_JUMP_SPD;
+		player->canJump = false;
+		player->isJumping = true;
 	}
-
-	// Aplicar gravidade
 	player->speed += G * delta;
 	player->position.y += player->speed * delta;
-
-	// Verificar colisão com o chão
 	for (int i = 0; i < envItemsLength; i++) {
 		EnvItem* ei = &envItems[i];
 		if (ei->blocking && CheckCollisionPointRec((Vector2) { player->position.x, player->position.y + playerAltura }, ei->rect)) {
 			player->canJump = true;
 			player->isJumping = false;
 			player->speed = 0;
-
-			// Ajustar a posição do jogador para ficar na borda superior da plataforma
 			player->position.y = ei->rect.y - playerAltura + 1;
 			break;
 		}
 	}
-
-	// Verificar se o jogador caiu fora da tela
 	if (player->position.y > 600) {
 		player->lives--;
 		if (player->lives <= 0) {
 			*currentState = GAMEOVER;
 		}
-		else {
-			// Reiniciar a posição do jogador
+		else{
 			player->position = (Vector2){ 400, 280 };
 			player->speed = 0;
 		}
 	}
-
-	// Verificar colisão com moedas
 	for (int i = 0; i < coinsLength; i++) {
 		float coinRadius = (float)moedas.width / 4;
 		if (!coins[i].collected && CheckCollisionCircles(player->position, 20, coins[i].position, coins[i].radius)) {
@@ -341,19 +242,13 @@ void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float d
 		}
 	}
 }
-
-// Função para adicionar um obstáculo à lista
 void AddObstacle(ObstacleNode** head, Vector2 spawnPosition) {
 	ObstacleNode* newNode = (ObstacleNode*)malloc(sizeof(ObstacleNode));
 	if (newNode == NULL) return;
-
-	// Inicializar o novo obstáculo
 	newNode->obstacle.position = spawnPosition;
 	newNode->obstacle.speed = (Vector2){ 0.0f, 0.0f };
 	newNode->obstacle.active = true;
 	newNode->obstacle.color = RED;
-
-	// Determinar a direção do obstáculo (esquerda ou direita)
 	if (leftCount <= rightCount) {
 		newNode->obstacle.movingLeft = true;
 		leftCount++;
@@ -362,101 +257,65 @@ void AddObstacle(ObstacleNode** head, Vector2 spawnPosition) {
 		newNode->obstacle.movingLeft = false;
 		rightCount++;
 	}
-
-	// Inserir o novo obstáculo no início da lista
 	newNode->next = *head;
 	*head = newNode;
 }
+
 // Função alternativa para adicionar outro tipo de obstáculo
 void AddObstacle2(ObstacleNode** head, Vector2 spawnPosition) {
-	// Aloca memória para um novo nó de obstáculo
 	ObstacleNode* newNode = (ObstacleNode*)malloc(sizeof(ObstacleNode));
-	// Verifica se a alocação de memória falhou
 	if (newNode == NULL) return;
-
-	// Define a posição inicial do obstáculo
 	newNode->obstacle.position = spawnPosition;
-	// Define a velocidade inicial como zero
 	newNode->obstacle.speed = (Vector2){ 0.0f, 0.0f };
-	// Marca o obstáculo como ativo
 	newNode->obstacle.active = true;
-	// Define a cor do obstáculo como vermelho
 	newNode->obstacle.color = RED;
-
-	// Determina a direção do obstáculo com base nos contadores
 	if (leftCount2 <= rightCount2) {
-		// Move o obstáculo para a esquerda se houver menos obstáculos à esquerda
 		newNode->obstacle.movingLeft = true;
 		leftCount2++;
 	}
 	else {
-		// Move o obstáculo para a direita
 		newNode->obstacle.movingLeft = false;
 		rightCount2++;
 	}
-
-	// Insere o novo obstáculo no início da lista
 	newNode->next = *head;
 	*head = newNode;
 }
-
-// Função de atualização de obstáculos
 void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta, Player* player, GameState* currentState) {
-	ObstacleNode* current = head;  // Aponta para o início da lista de obstáculos
-	bool playerHit = false;        // Flag para verificar se o jogador foi atingido
-
-	// Percorre a lista de obstáculos
+	ObstacleNode* current = head;
+	bool playerHit = false;
 	while (current != NULL) {
-		// Verifica se o obstáculo está inativo
 		if (!current->obstacle.active) {
 			current = current->next;
-			continue;  // Pula para o próximo obstáculo
+			continue;
 		}
-
-		bool hitObstacle = false;  // Flag para colisão com o ambiente
-
-		// Aplica a gravidade ao obstáculo
+		bool hitObstacle = false;
 		current->obstacle.speed.y += G * delta;
-		// Atualiza a posição vertical do obstáculo
 		current->obstacle.position.y += current->obstacle.speed.y * delta;
-
-		// Movimenta o obstáculo para a esquerda ou direita
 		if (current->obstacle.movingLeft) {
 			current->obstacle.position.x -= OBSTACLE_HORIZONTAL_SPD * delta;
 		}
 		else {
 			current->obstacle.position.x += OBSTACLE_HORIZONTAL_SPD * delta;
 		}
-
-		// Verifica colisão com itens do ambiente
 		for (int j = 0; j < envItemsLength; j++) {
-			EnvItem* ei = &envItems[j];  // Aponta para o item atual do ambiente
-			// Verifica colisão com o obstáculo
+			EnvItem* ei = &envItems[j];
 			if (ei->blocking &&
 				current->obstacle.position.x + 10 >= ei->rect.x &&
 				current->obstacle.position.x - 10 <= ei->rect.x + ei->rect.width &&
 				current->obstacle.position.y + 20 >= ei->rect.y &&
 				current->obstacle.position.y <= ei->rect.y + current->obstacle.speed.y * delta) {
-				hitObstacle = true;  // Colisão detectada
-				// Faz o obstáculo "quicar"
+				hitObstacle = true;
 				current->obstacle.speed.y = -PLAYER_JUMP_SPD / 2;
-				// Ajusta a posição para ficar acima do item
 				current->obstacle.position.y = ei->rect.y - 20;
 				break;
 			}
 		}
-
-		// Desativa o obstáculo se ele sair da tela
 		if (current->obstacle.position.x > 850 || current->obstacle.position.x < -50) {
 			current->obstacle.active = false;
 		}
-
-		// Desativa o obstáculo se ele cair fora da tela
 		if (!hitObstacle && current->obstacle.position.y > 600) {
 			current->obstacle.active = false;
 		}
-
-		// Verifica colisão com o jogador
 		float playerRadius = 20.0f;
 		if (CheckCollisionCircles(player->position, playerRadius, current->obstacle.position, 10.0f)) {
 			if (!player->damaged) {
@@ -468,16 +327,11 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
 					return;
 				}
 			}
-			current->obstacle.active = false;  // Marcar o obstáculo como inativo
+			current->obstacle.active = false;
 			playerHit = true;
 		}
-
-
-		// Move para o próximo obstáculo na lista
 		current = current->next;
 	}
-
-	// Reseta o estado de dano do jogador se ele não foi atingido
 	if (!playerHit) {
 		player->damaged = false;
 	}
@@ -485,39 +339,28 @@ void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, 
 
 void UpdateBoss(Boss* boss, Player* player, EnvItem* envItems, int envItemsLength, float deltaTime, GameState* currentState) {
 	if (boss->active && !boss->defeated) {
-		// Limites da plataforma do boss
 		float platformLeft = envItems[envItemsLength - 1].rect.x;
 		float platformRight = envItems[envItemsLength - 1].rect.x + envItems[envItemsLength - 1].rect.width;
-
-		// Velocidade e largura do boss
-		float bossSpeed = 100.0f;
-		float bossWidth = 50.0f;  // Largura do boss
+		float bossSpeed = 500.0f;
+		float bossWidth = 50.0f;
 		static bool movingLeft = true;
-
-		// Movimento do boss, considerando sua largura
 		if (movingLeft) {
 			boss->position.x -= bossSpeed * deltaTime;
-			// Verifique se o boss atingiu o limite esquerdo da plataforma
 			if (boss->position.x <= platformLeft) {
 				movingLeft = false;
 			}
 		}
 		else {
 			boss->position.x += bossSpeed * deltaTime;
-			// Verifique se o boss atingiu o limite direito da plataforma, considerando sua largura
 			if (boss->position.x + bossWidth >= platformRight) {
 				movingLeft = true;
 			}
 		}
-
-		// Verificar colisão com o jogador
 		Rectangle bossRect = { boss->position.x, boss->position.y - 20, bossWidth, 60 };
 		if (CheckCollisionPointRec(player->position, bossRect)) {
 			if (!player->damaged) {
 				player->lives--;
 				player->damaged = true;
-
-				// Verificar se o jogador morreu
 				if (player->lives <= 0) {
 					*currentState = GAMEOVER;
 					return;
@@ -529,41 +372,30 @@ void UpdateBoss(Boss* boss, Player* player, EnvItem* envItems, int envItemsLengt
 		}
 	}
 }
-
-// Função para remover obstáculos inativos
 void RemoveInactiveObstacles(ObstacleNode** head) {
-	ObstacleNode* current = *head;  // Aponta para o início da lista
-	ObstacleNode* prev = NULL;      // Ponteiro para o nó anterior
-
-	// Percorre a lista de obstáculos
+	ObstacleNode* current = *head;
+	ObstacleNode* prev = NULL;
 	while (current != NULL) {
-		// Verifica se o obstáculo está inativo
 		if (!current->obstacle.active) {
-			// Remove o obstáculo da lista
 			if (prev == NULL) {
 				*head = current->next;
 			}
 			else {
 				prev->next = current->next;
 			}
-			// Libera a memória do obstáculo
 			ObstacleNode* temp = current;
 			current = current->next;
 			free(temp);
 		}
 		else {
-			prev = current;  // Atualiza o nó anterior
+			prev = current;
 			current = current->next;
 		}
 	}
 }
-
-// Função para desenhar obstáculos
 void DrawObstacles(ObstacleNode* head) {
-	ObstacleNode* current = head;  // Aponta para o início da lista
-	// Percorre a lista de obstáculos
+	ObstacleNode* current = head;
 	while (current != NULL) {
-		// Desenha o obstáculo se estiver ativo
 		if (current->obstacle.active) {
 			DrawTexturePro(
 				obstaculo,
@@ -580,29 +412,22 @@ void DrawObstacles(ObstacleNode* head) {
 				WHITE
 			);
 		}
-		current = current->next;  // Move para o próximo obstáculo
+		current = current->next;
 	}
 }
-
-// Função para liberar memória da lista de obstáculos
 void FreeObstacleList(ObstacleNode* head) {
 	ObstacleNode* current = head;
-	// Percorre a lista e libera a memória de cada nó
 	while (current != NULL) {
 		ObstacleNode* temp = current;
 		current = current->next;
 		free(temp);
 	}
 }
-
-// Função para desenhar a barra de vidas do jogador
 void DrawHealthBar(Player* player, int screenWidth) {
-	int heartSize = 30;       // Define o tamanho da imagem de coração
-	int barX = 20;            // Posição X inicial
-	int barY = 50;            // Posição Y inicial
-	int heartSpacing = 10;    // Espaçamento entre os corações
-
-	// Desenha um coração para cada vida do jogador
+	int heartSize = 30;
+	int barX = 20;
+	int barY = 50;
+	int heartSpacing = 10;
 	for (int i = 0; i < player->lives; i++) {
 		DrawTextureEx(vida, (Vector2) { barX + i * (heartSize + heartSpacing), barY }, 0.0f, (float)heartSize / vida.width, WHITE);
 	}
@@ -610,32 +435,28 @@ void DrawHealthBar(Player* player, int screenWidth) {
 
 void DrawBoss(Boss* boss) {
 	if (boss->active && !boss->defeated) {
-		DrawRectangle(boss->position.x - 0, boss->position.y - 20, 30, 40, RED);  // Desenha o boss
-		DrawText(TextFormat("Vida: %d", boss->health), boss->position.x - 30, boss->position.y - 50, 20, BLACK);  // Mostra a vida do boss
-		DrawTextureEx(vilao, (Vector2) { boss->position.x -30, boss->position.y -40}, 0.0f, BOSS_SCALE, WHITE);
+		DrawRectangle(boss->position.x - 0, boss->position.y - 20, 30, 40, RED);
+		DrawText(TextFormat("Vida: %d", boss->health), boss->position.x - 30, boss->position.y - 50, 20, BLACK);
+		DrawTextureEx(vilao, (Vector2) { boss->position.x - 30, boss->position.y - 40 }, 0.0f, BOSS_SCALE, WHITE);
 	}
 }
 
 void UpdateWeb(Web* web, Boss* boss, float deltaTime, GameState* currentState) {
 	if (web->active) {
-		// Atualizar a posição da teia
 		web->position.x += web->speed.x * deltaTime;
-
-		// Verificar colisão com o boss
 		Rectangle bossRect = { boss->position.x, boss->position.y - 20, 50, 60 };
 		if (CheckCollisionPointRec(web->position, bossRect)) {
-			web->active = false;  // Desativar a teia após atingir o boss
-			boss->health -= 20;   // Reduzir a vida do boss
-
-			// Verificar se o boss foi derrotado
+			web->active = false;
+			boss->health -= 20;
 			if (boss->health <= 0) {
 				boss->defeated = true;
 				boss->active = false;
-				*currentState = VICTORY;  // Trocar para o estado de vitória
+				*currentState = VICTORY;
+				boss->defeated = false;
+				boss->active = true;
+				boss->health = 100;
 			}
 		}
-
-		// Desativar a teia se ela sair da tela
 		if (web->position.x < 0 || web->position.x > 1920) {
 			web->active = false;
 		}
@@ -644,27 +465,23 @@ void UpdateWeb(Web* web, Boss* boss, float deltaTime, GameState* currentState) {
 
 // Função principal do programa
 int main(void) {
-	const int screenWidth = 1920;  // Largura da janela
-	const int screenHeight = 1080; // Altura da janela
 
-	// Inicializa a janela do jogo
+	const int screenWidth = 1920;
+	const int screenHeight = 1080; 
 	InitWindow(screenWidth, screenHeight, "Plataformia - a Spider-Man Game");
 
 	Web web = { 0 };
 	web.active = false;
-	web.speed = (Vector2){ 500.0f, 0.0f };  // Velocidade da teia
+	web.speed = (Vector2){ 500.0f, 0.0f };
 
 	// Carregamento das texturas
 	backgroundgameplayy = LoadTexture("resources/backgroundgameplayy.png");
-	float scale = (float)screenWidth / backgroundgameplayy.width;  // Escala do fundo
-
+	float scale = (float)screenWidth / backgroundgameplayy.width;
 	moedas = LoadTexture("resources/coin.png");
 	concreto = LoadTexture("resources/concreto.png");
 	plataforma = LoadTexture("resources/plataforma.png");
 	obstaculo = LoadTexture("resources/obstaculo.png");
 	teia = LoadTexture("resources/teia.png");
-
-	// Carregamento das texturas do jogador
 	playerparado = LoadTexture("resources/playerparado.png");
 	playerpulando = LoadTexture("resources/playerpulando.png");
 	playerdireita[0] = LoadTexture("resources/playerdireta1.png");
@@ -674,13 +491,10 @@ int main(void) {
 	playeresquerda[1] = LoadTexture("resources/playeresquerda2.png");
 	playeresquerda[2] = LoadTexture("resources/playeresquerda3.png");
 	vilao = LoadTexture("resources/boss.png");
+	vida = LoadTexture("resources/vida.png");
 
-	vida = LoadTexture("resources/vida.png");  // Textura da vida do jogador
-
-
-	GameState currentState = MENU;  // Define o estado inicial do jogo como MENU
-
-	int coinsCollected = 0;  // Contador de moedas coletadas
+	GameState currentState = MENU;
+	int coinsCollected = 0;
 
 	// Definição dos itens do ambiente
 	EnvItem envItems[] = {
@@ -694,26 +508,23 @@ int main(void) {
 		{{ 220, -30, 100, 10 }, 1, BLACK },
 		{{ -130, -130, 300, 10 }, 1, BLACK },
 		//duas em cima
-		{{-50,-230,100,10}, 1, BLACK}, 
+		{{-50,-230,100,10}, 1, BLACK},
 		{{150, -290, 100, 10}, 1, BLACK},
 		//boss
 		{{310, -390, 300, 10}, 1, BLACK}
 	};
-	int envItemsLength = sizeof(envItems) / sizeof(envItems[0]);  // Calcula o tamanho do array
+	int envItemsLength = sizeof(envItems) / sizeof(envItems[0]);
 
 	// Inicialização do jogador
 	Player player = { 0 };
 	player.position = (Vector2){ 400, envItems[0].rect.y };
 	player.speed = 0;
-	player.canJump = true;    // Define que o jogador pode pular inicialmente
-	player.lives = 3;         // Define o número de vidas
-	player.damaged = false;   // O jogador não está danificado inicialmente
-	player.isJumping = false; // O jogador não está pulando inicialmente
-
-	// Verifica se o jogador está em contato com o chão na inicialização
+	player.canJump = true;
+	player.lives = 3;
+	player.damaged = false;
+	player.isJumping = false;
 	for (int i = 0; i < envItemsLength; i++) {
 		EnvItem* ei = &envItems[i];
-		// Se o jogador colidir com um item bloqueante, permite o pulo
 		if (ei->blocking && CheckCollisionPointRec(player.position, ei->rect)) {
 			player.canJump = true;
 			player.speed = 0;
@@ -721,29 +532,23 @@ int main(void) {
 			break;
 		}
 	}
-	Boss boss = { 0 };
-	boss.position = (Vector2){ envItems[envItemsLength - 1].rect.x + envItems[envItemsLength - 1].rect.width / 2,
-						  envItems[envItemsLength - 1].rect.y - 50 };
 
+	Boss boss = { 0 };
+	boss.position = (Vector2){ envItems[envItemsLength - 1].rect.x + envItems[envItemsLength - 1].rect.width / 2, envItems[envItemsLength - 1].rect.y - 50 };
 	boss.health = 100;
 	boss.active = true;
 	boss.defeated = false;
-	
-	DrawRectangle(boss.position.x, boss.position.y, 50, 50, RED);  // Representação visual do boss
+	DrawRectangle(boss.position.x, boss.position.y, 50, 50, RED);
 
-
-	// Definição do raio da moeda para colisão
 	float coinRadius = (moedas.width * coinScale) / 2.0f;
-
-	// Inicialização das moedas
 	coin coins[MAX_COINS] = {
 		{{ 350, 180 }, false, coinRadius },
 		{{ 690, 280 }, false, coinRadius },
 		{{ 510, 30 }, false, coinRadius }
 	};
 
-	ObstacleNode* obstacleList = NULL;   // Ponteiro para a lista de obstáculos
-	float obstacleSpawnTimer = 0.0f;     // Timer para controlar a geração de obstáculos
+	ObstacleNode* obstacleList = NULL;
+	float obstacleSpawnTimer = 0.0f;
 
 	// Configuração da câmera
 	Camera2D camera = { 0 };
@@ -752,76 +557,56 @@ int main(void) {
 	camera.rotation = 0.0f;
 	camera.zoom = 1.0f;
 
-	SetTargetFPS(60);  // Define o FPS do jogo para 60
+	SetTargetFPS(60);
 
 	// Loop principal do jogo
 	while (!WindowShouldClose()) {
-		float deltaTime = GetFrameTime();  // Calcula o tempo entre frames
+		float deltaTime = GetFrameTime();
 
-		// Lógica para o estado MENU
 		if (currentState == MENU) {
 			if (IsKeyPressed(KEY_ENTER)) {
-				currentState = GAMEPLAY;  // Inicia o jogo ao pressionar ENTER
+				currentState = GAMEPLAY;
 			}
 		}
-		// Lógica para o estado GAMEPLAY
 		else if (currentState == GAMEPLAY) {
-			// Atualiza o estado do jogador
 			UpdatePlayer(&player, envItems, envItemsLength, deltaTime, coins, MAX_COINS, &currentState, &coinsCollected);
-
-			// Lógica para atirar a teia
 			if (IsKeyPressed(KEY_T) && !web.active) {
-				web.position = player.position;  // A teia começa na posição do jogador
+				web.position = player.position;
 				web.active = true;
-
-				// Define a direção da teia com base na direção que o jogador está olhando
 				if (facingRight) {
-					web.speed.x = 500.0f;  // Teia vai para a direita
+					web.speed.x = 500.0f;
 				}
 				else {
-					web.speed.x = -500.0f; // Teia vai para a esquerda
+					web.speed.x = -500.0f;
 				}
 			}
-
 			UpdateBoss(&boss, &player, envItems, envItemsLength, deltaTime, &currentState);
 			UpdateWeb(&web, &boss, deltaTime, &currentState);
 
-			// Incrementa o timer e gera novos obstáculos quando necessário
 			obstacleSpawnTimer += deltaTime;
 			if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
 				obstacleSpawnTimer = 0.0f;
 				AddObstacle(&obstacleList, (Vector2) { 500, 100 });
 				AddObstacle2(&obstacleList, (Vector2) { 500, -100 });
 			}
-
-			// Atualiza os obstáculos e remove os inativos
 			UpdateObstacles(obstacleList, envItems, envItemsLength, deltaTime, &player, &currentState);
 			RemoveInactiveObstacles(&obstacleList);
 
-			// Ajusta a câmera para seguir o jogador
 			camera.target = player.position;
 		}
 
-		BeginDrawing();  // Inicia o processo de desenho na tela
-		ClearBackground(RAYWHITE);  // Limpa a tela com a cor de fundo branco
-
-		// Verifica se o estado atual do jogo é MENU
+		BeginDrawing();
+		ClearBackground(RAYWHITE);
 		if (currentState == MENU) {
-			//float scaleX = (float)screenWidth / menu.width * 1.2f;
-			//float scaleY = (float)screenHeight / menu.height * 1.2f;
 			ClearBackground(BLACK);
 
-			int fontSize = 30;  // Aumentando o tamanho da fonte
-
-			// Mensagem de boas-vindas centralizada e mais para cima
+			int fontSize = 30;
 			DrawText("Bem-vindo(a) ao Plataformia!", screenWidth / 2 - MeasureText("Bem-vindo ao Plataformia!", fontSize) / 2, screenHeight / 2 - 200, fontSize, WHITE);
-
-			// Introdução do jogo mais centralizada
-			int introX = screenWidth / 4;  // Aproximadamente 25% da largura da tela
+			int introX = screenWidth / 4;
 			DrawText("Ano: 2002, Cidade de Nova York.", introX - 150, screenHeight / 2 - 100, fontSize, WHITE);
-			DrawText("O jovem Peter Parker, nosso icônico Homem-Aranha,", introX - 300, screenHeight / 2 - 70, fontSize,WHITE);
+			DrawText("O jovem Peter Parker, nosso icônico Homem-Aranha,", introX - 300, screenHeight / 2 - 70, fontSize, WHITE);
 			DrawText("enfrenta seu maior desafio até agora.", introX - 300, screenHeight / 2 - 40, fontSize, WHITE);
-			DrawText("Em uma perseguição pelos arranha-céus de Manhattan,", introX - 300, screenHeight / 2 - 10, fontSize,WHITE);
+			DrawText("Em uma perseguição pelos arranha-céus de Manhattan,", introX - 300, screenHeight / 2 - 10, fontSize, WHITE);
 			DrawText("o perigoso e imprevisível Duende Verde está determinado", introX - 300, screenHeight / 2 + 20, fontSize, WHITE);
 			DrawText("a destruir o herói da cidade.", introX - 300, screenHeight / 2 + 50, fontSize, WHITE);
 
@@ -830,53 +615,41 @@ int main(void) {
 			DrawText("Será que você consegue escapar das armadilhas", introX - 300, screenHeight / 2 + 140, fontSize, WHITE);
 			DrawText("do Duende Verde e salvar Nova York do caos?", introX - 300, screenHeight / 2 + 170, fontSize, WHITE);
 
-			// Instruções de comando mais centralizadas no lado direito
-			int commandX = screenWidth * 3 / 4;  // Aproximadamente 75% da largura da tela
+			int commandX = screenWidth * 3 / 4;
 			DrawText("Aperte ENTER para começar", commandX - MeasureText("Aperte ENTER para começar", fontSize) / 2, screenHeight / 2 + 10, fontSize, WHITE);
 			DrawText("ou ESC para sair.", commandX - MeasureText("ou ESC para sair.", fontSize) / 2, screenHeight / 2 + 40, fontSize, WHITE);
 			DrawText("Use as setas do teclado para se mover", commandX - MeasureText("Use as setas do teclado para se mover", fontSize) / 2, screenHeight / 2 + 70, fontSize, WHITE);
 			DrawText("e a barra de espaço para pular!", commandX - MeasureText("e a barra de espaço para pular!", fontSize) / 2, screenHeight / 2 + 110, fontSize, WHITE);
 		}
-
-		// Verifica se o estado atual do jogo é GAMEPLAY
 		else if (currentState == GAMEPLAY) {
-			// Define a escala da imagem de fundo para cobrir a tela inteira
 			float scaleX = (float)screenWidth / backgroundgameplayy.width * 1.2f;
 			float scaleY = (float)screenHeight / backgroundgameplayy.height * 1.2f;
-
-			// Calcula o efeito de paralaxe para o fundo
 			float parallaxX = -camera.target.x * 0.1f;
-			float parallaxY = -camera.target.y * 0.05f - 30;  // Move o fundo um pouco para cima
+			float parallaxY = -camera.target.y * 0.05f - 30;
 
-			// Desenha a imagem de fundo com o efeito de paralaxe
 			DrawTextureEx(backgroundgameplayy, (Vector2) { parallaxX, parallaxY }, 0.0f, scaleX > scaleY ? scaleX : scaleY, WHITE);
-			
-			BeginMode2D(camera);  // Inicia o modo 2D, aplicando a posição da câmera
 
-			// Desenha cada item do ambiente como um retângulo
+			BeginMode2D(camera);
+
 			for (int i = 0; i < envItemsLength; i++) DrawRectangleRec(envItems[i].rect, envItems[i].color);
-
-			// Desenha as plataformas com texturas específicas
 			for (int i = 0; i < envItemsLength; i++) {
 				if (i == 0) {
-					// Desenha a primeira plataforma com a textura de concreto
 					DrawTexturePro(
 						concreto,
 						(Rectangle) {
 						0, 0, concreto.width, concreto.height
-					},  // Fonte (imagem completa)
+					},
 						(Rectangle) {
 						envItems[i].rect.x, envItems[i].rect.y, envItems[i].rect.width, envItems[i].rect.height
-					},  // Destino (plataforma)
+					},
 						(Vector2) {
 						0, 0
-					},  // Origem (sem offset)
-						0.0f,               // Rotação
-						WHITE               // Cor (sem modificador)
+					},
+						0.0f,
+						WHITE
 					);
 				}
 				else {
-					// Desenha as outras plataformas com a textura padrão
 					DrawTexturePro(
 						plataforma,
 						(Rectangle) {
@@ -894,182 +667,119 @@ int main(void) {
 				}
 				DrawBoss(&boss);
 			}
-
-			// Desenha todas as moedas que ainda não foram coletadas
 			for (int i = 0; i < MAX_COINS; i++) {
 				if (!coins[i].collected) {
 					Vector2 drawPosition = { coins[i].position.x - (moedas.width * coinScale) / 2, coins[i].position.y - (moedas.height * coinScale) / 2 };
-					DrawTextureEx(moedas, drawPosition, 0.0f, coinScale, WHITE);  // Desenha a moeda com a escala definida
+					DrawTextureEx(moedas, drawPosition, 0.0f, coinScale, WHITE);
 				}
 			}
 
-			// Desenha o sprite correto do jogador, dependendo do seu estado (pulo ou movimentação)
 			if (player.isJumping) {
-				// Desenha o sprite de pulo do jogador
 				DrawTextureEx(playerpulando, (Vector2) { player.position.x - (playerpulando.width * PLAYER_SCALE) / 2, player.position.y - (playerpulando.height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
 			}
 			else if (IsKeyDown(KEY_LEFT)) {
-				// Desenha o sprite do jogador andando para a esquerda
 				DrawTextureEx(playeresquerda[frameIndex], (Vector2) { player.position.x - (playeresquerda[frameIndex].width * PLAYER_SCALE) / 2, player.position.y - (playeresquerda[frameIndex].height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
 			}
 			else if (IsKeyDown(KEY_RIGHT)) {
-				// Desenha o sprite do jogador andando para a direita
 				DrawTextureEx(playerdireita[frameIndex], (Vector2) { player.position.x - (playerdireita[frameIndex].width * PLAYER_SCALE) / 2, player.position.y - (playerdireita[frameIndex].height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
 			}
 			else {
-				// Desenha o sprite do jogador parado
 				DrawTextureEx(playerparado, (Vector2) { player.position.x - (playerparado.width * PLAYER_SCALE) / 2, player.position.y - (playerparado.height * PLAYER_SCALE) / 2 }, 0.0f, PLAYER_SCALE, WHITE);
 			}
 
-			// Desenhar a teia
 			if (web.active) {
 				DrawTextureEx(teia, web.position, 0.0f, 0.2f, WHITE);
 			}
 
-			// Desenha todos os obstáculos ativos na tela
 			DrawObstacles(obstacleList);
-
-			EndMode2D();  // Termina o modo 2D
-
-			// Desenha a barra de vida do jogador
+			EndMode2D();
 			DrawHealthBar(&player, screenWidth);
-
-			// Exibe o contador de moedas coletadas no canto superior esquerdo
 			DrawText(TextFormat("Moedas coletadas: %d", coinsCollected), 20, 80, 20, BLACK);
 		}
-
-		// Verifica se o estado atual do jogo é LEADERBOARD
 		else if (currentState == LEADERBOARD) {
-			ClearBackground(BLACK);  // Cor de fundo da tela de leaderboard
-
-			// Carrega e exibe os registros dos melhores jogadores
+			ClearBackground(BLACK);
 			PlayerRecord records[100];
 			int recordCount = LoadPlayerRecords("records.txt", records, 100);
 			DisplayTopPlayers(records, recordCount, screenWidth);
-
-			
-			// Pressionar ENTER volta ao menu
 			if (IsKeyPressed(KEY_ENTER)) {
 				currentState = MENU;
-
-				// Resetar variáveis do jogo
 				player.position = (Vector2){ 400, 280 };
 				player.speed = 0;
 				player.lives = 3;
 				coinsCollected = 0;
-
-				// Resetar moedas
 				for (int i = 0; i < MAX_COINS; i++) {
 					coins[i].collected = false;
 				}
 			}
-			}
+		}
 
 		else if (currentState == VICTORY) {
-			ClearBackground(BLACK);  // Cor de fundo da tela de vitória
-
-			// Exibe mensagem de vitória
+			ClearBackground(BLACK);
 			int fontSize = 40;
 			DrawText("Parabéns, você venceu o Duende Verde!",
 				screenWidth / 2 - MeasureText("Parabéns, você venceu o Duende Verde!", fontSize) / 2,
 				screenHeight / 2 - 50, fontSize, WHITE);
-
-			// Solicita nome do jogador
 			DrawText("Digite seu nome e pressione ENTER", screenWidth / 2 - 200, screenHeight / 2, 20, WHITE);
 			DrawText(playerName, screenWidth / 2 - 100, screenHeight / 2 + 40, 20, WHITE);
-
-			// Captura entrada do teclado para o nome do jogador
 			key = GetCharPressed();
 			if ((key >= 32) && (key <= 125) && (nameIndex < 19)) {
 				playerName[nameIndex] = (char)key;
 				nameIndex++;
-				playerName[nameIndex] = '\0';  // Adiciona o terminador nulo
+				playerName[nameIndex] = '\0';
 			}
 
 			if (IsKeyPressed(KEY_BACKSPACE) && nameIndex > 0) {
 				nameIndex--;
 				playerName[nameIndex] = '\0';
 			}
-
-			// Quando ENTER é pressionado, salvar o nome e mudar para LEADERBOARD
 			if (IsKeyPressed(KEY_ENTER) && nameIndex > 0) {
 				PlayerRecord currentPlayer;
 				strcpy(currentPlayer.name, playerName);
 				currentPlayer.coinsCollected = coinsCollected;
 
-				SavePlayerRecord("records.txt", &currentPlayer);  // Salvar o registro do jogador
-				currentState = LEADERBOARD;  // Troca para o estado LEADERBOARD
-
-				// Reseta variáveis
+				SavePlayerRecord("records.txt", &currentPlayer);
+				currentState = LEADERBOARD;
 				playerName[0] = '\0';
 				nameIndex = 0;
 			}
-}
-
-		// Verifica se o estado atual do jogo é GAMEOVER
+		}
 		else if (currentState == GAMEOVER) {
-			ClearBackground(BLACK);  // Define o fundo como vermelho
-			DrawText("GAME OVER", screenWidth / 2 - MeasureText("GAME OVER", 40) / 2, screenHeight / 2 - 60, 40, WHITE);  // Exibe a mensagem de Game Over
-			DrawText("Digite seu nome e pressione ENTER", screenWidth / 2 - 200, screenHeight / 2, 20, WHITE);  // Instrução para o jogador
-			DrawText(playerName, screenWidth / 2 - 100, screenHeight / 2 + 40, 20, WHITE);  // Exibe o nome do jogador digitado até o momento
-
-			// Capturar entrada do teclado para o nome do jogador
+			ClearBackground(BLACK); 
+			DrawText("GAME OVER", screenWidth / 2 - MeasureText("GAME OVER", 40) / 2, screenHeight / 2 - 60, 40, WHITE);
+			DrawText("Digite seu nome e pressione ENTER", screenWidth / 2 - 200, screenHeight / 2, 20, WHITE);
+			DrawText(playerName, screenWidth / 2 - 100, screenHeight / 2 + 40, 20, WHITE);
 			do {
-				key = GetCharPressed();  // Capturar o próximo caractere
-				// Somente permitir letras, números e espaços
-
+				key = GetCharPressed();
 				if ((key >= 32) && (key <= 125) && (nameIndex < 19)) {
 					playerName[nameIndex] = (char)key;
 					nameIndex++;
-					playerName[nameIndex] = '\0';  // Adicionar o terminador nulo
+					playerName[nameIndex] = '\0';
 				}
-
-				// Apagar o último caractere se BACKSPACE for pressionado
 				if (IsKeyPressed(KEY_BACKSPACE) && nameIndex > 0) {
 					nameIndex--;
 					playerName[nameIndex] = '\0';
 				}
 
 			} while (key > 0);
-
-			// Quando ENTER é pressionado, salvar o registro e exibir a tela de leaderboard
 			if (IsKeyPressed(KEY_ENTER) && nameIndex > 0) {
 				PlayerRecord currentPlayer;
 				strcpy(currentPlayer.name, playerName);
 				currentPlayer.coinsCollected = coinsCollected;
-
-				// Salva o novo registro no arquivo
 				SavePlayerRecord("records.txt", &currentPlayer);
-
-				// Carregar os registros atualizados para exibir na tela
 				PlayerRecord records[100];
 				int recordCount = LoadPlayerRecords("records.txt", records, 100);
-
-				// Mudar para o estado LEADERBOARD
 				currentState = LEADERBOARD;
-
-				// Resetar variáveis de entrada
 				playerName[0] = '\0';
 				nameIndex = 0;
 				coinsCollected = 0;
-
 				for (int i = 0; i < MAX_COINS; i++) {
 					coins[i].collected = false;
 				}
-			}
-
-
-			else if (currentState == LEADERBOARD) {
+			}else if (currentState == LEADERBOARD) {
 				ClearBackground(BLACK);
-
-				// Carregar e exibir os melhores jogadores
 				PlayerRecord records[100];
 				int recordCount = LoadPlayerRecords("records.txt", records, 100);
-
-				// Exibir os 5 melhores jogadores na tela usando DisplayTopPlayers
 				DisplayTopPlayers(records, recordCount, screenWidth);
-
-				// Voltar para o menu se o jogador pressionar ENTER
 				if (IsKeyPressed(KEY_ENTER)) {
 					currentState = MENU;
 					player.position = (Vector2){ 400, 280 };
@@ -1078,22 +788,14 @@ int main(void) {
 					coinsCollected = 0;
 				}
 			}
-
-			// Quando ENTER é pressionado no estado GAMEOVER para salvar o registro e voltar ao menu
 			if (save) {
 				PlayerRecord currentPlayer;
 				strcpy(currentPlayer.name, playerName);
 				currentPlayer.coinsCollected = coinsCollected;
-
 				SavePlayerRecord("records.txt", &currentPlayer);
-
-				// Exibir os melhores jogadores no estado LEADERBOARD
 				PlayerRecord records[100];
 				int recordCount = LoadPlayerRecords("records.txt", records, 100);
-
 				currentState = LEADERBOARD;
-
-				// Resetar variáveis
 				player.position = (Vector2){ 400, 280 };
 				player.speed = 0;
 				player.lives = 3;
@@ -1103,13 +805,9 @@ int main(void) {
 				nameIndex = 0;
 				save = false;
 			}
-
-
 		}
-
 		EndDrawing();
 	}
-
 	FreeObstacleList(obstacleList);
 	UnloadTexture(backgroundgameplayy);
 	UnloadTexture(moedas);
