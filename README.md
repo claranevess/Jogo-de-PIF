@@ -46,25 +46,31 @@ O jogador deve, seguindo as intruções da tela de menu, pular pelas plataformas
 
 Para executar o Plataformia, siga essas etapas:
 
-1. Clone esse repositório em sua máquina:
-```
-git clone https://github.com/claranevess/Plataformia
-```
-2. Entre no arquivo do jogo:
-```
-Na pasta plataformia, entre na subpasta 'Source Files' e clique no arquivo main.c
-```
-3. Rode o executável do jogo:
-```
-Clique no botão de 'Run' do seu editor
-```
-4. Divirta-se jogando Plataformia com seus amigos!
+1-Baixar dependências:
+
+-sudo apt update
+
+-sudo apt install build-essential libgl1-mesa-dev libegl1-mesa-dev libopenal-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libasound2-dev libvulkan-dev git cmake
+
+2- Baixe a raylib:
+
+-sudo apt install libraylib-dev
+
+3- Dê git clone neste repositório
+
+4- Compile:
+
+-gcc main.c -o main -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+
+./main
+
+5. Divirta-se jogando Plataformia com seus amigos!
 
 ## Membros
 
-- **Gabriel Araújo** - <a href="mailto:bielaraujo578@gmail.com">📧</a> - <a href="https://br.linkedin.com/in/gabriel-ara%C3%BAjo-bb37792b0"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="20"></a>
-- **Aline Amâncio** - <a href="mailto:afa3@cesar.school">📧</a> - <a href="https://www.linkedin.com/in/aline-amancio-23a6b9247/"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="20"></a>
-- **Clara Neves** - <a href="mailto:mcsan2cesar.school">📧</a> - <a href="https://www.linkedin.com/in/claranevess/"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="20"></a>
+- *Gabriel Araújo* - <a href="mailto:bielaraujo578@gmail.com">📧</a> - <a href="https://br.linkedin.com/in/gabriel-ara%C3%BAjo-bb37792b0"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="20"></a>
+- *Aline Amâncio* - <a href="mailto:afa3@cesar.school">📧</a> - <a href="https://www.linkedin.com/in/aline-amancio-23a6b9247/"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="20"></a>
+- *Clara Neves* - <a href="mailto:mcsan2cesar.school">📧</a> - <a href="https://www.linkedin.com/in/claranevess/"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" width="20"></a>
 
 <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
     <a href="https://github.com/GabrielAraujo578">
