@@ -5,38 +5,42 @@
 "Plataformia" é um jogo de plataforma envolvente e desafiador, criado na linguagem C, que combina elementos clássicos de jogos como "Donkey Kong (1981)" e "Dino T-Rex" no universo do filme "Homem-Aranha". O jogo se desenrola em cinco telas distintas:
 
 ### Tela 1 
-Início do Jogo: O jogador navega por plataformas enfrentando obstáculos e coletando recompensas espalhadas. Esta fase introduz a mecânica básica do jogo, preparando o jogador para desafios futuros.
+Menu: O jogador é apresentado a história do jogo e as instruções técnicas para jogar.
 
 ### Tela 2 
-Enfrentando o Boss: A segunda fase é uma versão intensificada da primeira, com os mesmos obstáculos, mas agora o jogador deve enfrentar um boss no topo da tela. O boss se move de um lado para o outro, enquanto o jogador coleta recompensas e busca espadas nas plataformas para atacá-lo.
+Gameplay: O jogador deve subir até a parte final do jogo pulando pelas plataformas e fugindo dos obstáculos enquanto coleta o máximo de moedas que conseguir.
 
 ### Tela 3
-Desafios Mortais: Esta fase apresenta um novo background e plataformas que representam um perigo mortal — se o jogador pisar nelas, morre. Os obstáculos são diferentes, mas o objetivo de coletar recompensas permanece, exigindo precisão e atenção.
+Gameover: Caso o jogador tenha perdido todas as suas vidas, ele é redirecionado para a tela de gameover e precisará inserir o seu nome para ver a tela de top jogadores.
 
-### Tela 4 
-Fim de Jogo: A fase final exibe a pontuação do jogador, acompanhada de um botão para reiniciar ou sair.
+### Tela 4
+Vitória: Caso o jogador tenha conseguido vencer o boss na parte final do mapa, ele é redirecionado para a tela de vitória em que receberá um parabéns e precisará inserir o seu nome para ver a tela de top jogadores.
 
 ### Tela 5
-SSS
+Top jogadores: O jogador verá os top 5 melhores jogadores - os que coletaram mais moedas - e precisará clicar ENTER para voltar ao menu.
 
 ## ⚪️ Objetivo do jogo
 
-O jogador precisa coletar recompensas ao longo das 3 fases para obter a sua pontuação final, sendo o melhor jogador o que obteve mais bolinhas. Ele apenas conseguirá a maior quantidade de bolinhas possível caso passe por essas fases, enfrentando os obstáculos e derrotando o boss.
+O jogador precisa coletar recompensas ao longo das 2 partes para obter a sua pontuação final, sendo o melhor jogador o que obteve mais moedas. Ele apenas conseguirá a maior quantidade de moedas possível caso passe por essas partes, enfrentando os obstáculos e derrotando o boss.
 
-### ▫ Recompensas
+### Recompensas
+As recompensas, representadas pelas moedas espalhadas pelo mapa, são um dos principais objetivos do jogador. Elas incentivam a exploração do mapa e criam uma progressão clara no jogo, já que coletar todas as moedas exige superar os desafios. Além disso, as recompensas servem como motivação para competir por uma pontuação alta no leaderboard, introduzindo uma camada de competitividade.
 
-### 🔺 Obstáculos
+### Obstáculos
+Os obstáculos adicionam dificuldade ao jogo ao limitar os movimentos do jogador e exigir reflexos rápidos. Eles são projetados para criar momentos de tensão e obrigar o jogador a reagir e planejar com cuidado. Sua presença torna o percurso mais dinâmico, variando os desafios e prevenindo que o jogo se torne previsível.
 
-### Plataformas mortais
-
-### 🟦 Boss não estático
+### Boss não estático
+O boss dinâmico no final do jogo é um teste final das habilidades do jogador. Ele exige domínio das mecânicas aprendidas anteriormente, como movimentação, uso de plataformas e reflexos rápidos. A movimentação do boss aumenta a dificuldade e a emoção do jogo, além de dar ao jogador um senso de realização ao ser derrotado, encerrando a experiência de forma memorável.
 
 ## ⌨️ Como jogar
 
-O jogo possui 2 "personagens" principais:
+O jogo possui 2 personagens:
 
-O jogador: 🟢
-O inimigo: 🟦
+O jogador
+
+O inimigo
+
+O jogador deve, seguindo as intruções da tela de menu, pular pelas plataformas, fugir dos obstáculos, coletar moedas e, após isso e para ganhar, derrotar o inimigo!
 
 ## ⚙️ Executando o jogo
 
