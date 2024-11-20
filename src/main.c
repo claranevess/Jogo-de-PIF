@@ -5,7 +5,7 @@
 #include <string.h>
 
 // Constantes para o jogo
-#define G 740
+#define G 720
 #define PLAYER_JUMP_SPD 400.0f
 #define PLAYER_HOR_SPD 200.0f
 #define MAX_COINS 6
@@ -32,8 +32,9 @@ int frameIndex = 0;
 float frameTime = 0.0f;
 float frameSpeed = 0.1f;
 bool facingRight = true;
-float bossSpeed = 100.0f;
+float bossSpeed;
 bool movingLeft = true;
+Music musicadefundo;
 
 // Texturas usadas no jogo
 Texture2D backgroundgameplayy;
@@ -44,7 +45,7 @@ Texture2D obstaculo;
 Texture2D playerparado;        
 Texture2D playerpulando;      
 Texture2D playerdireita[3];   
-Texture2D playeresquerda[3];   
+Texture2D playeresquerda[3]; 
 Texture2D vida;               
 Texture2D vilao;
 Texture2D teia;
@@ -110,6 +111,7 @@ typedef struct Web {
 void UpdatePlayer(Player* player, EnvItem* envItems, int envItemsLength, float delta, coin* coins, int coinsLength, GameState* currentState, int* coinsCollected);
 void AddObstacle(ObstacleNode** head, Vector2 spawnPosition);
 void AddObstacle2(ObstacleNode** head, Vector2 spawnPosition);
+void AddObstacle3(ObstacleNode** head, Vector2 spawnPosition);
 void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta, Player* player, GameState* currentState);
 void RemoveInactiveObstacles(ObstacleNode** head);
 void DrawObstacles(ObstacleNode* head);
@@ -280,6 +282,24 @@ void AddObstacle2(ObstacleNode** head, Vector2 spawnPosition) {
 	newNode->next = *head;
 	*head = newNode;
 }
+void AddObstacle3(ObstacleNode** head, Vector2 spawnPosition) {
+	ObstacleNode* newNode = (ObstacleNode*)malloc(sizeof(ObstacleNode));
+	if (newNode == NULL) return;
+	newNode->obstacle.position = spawnPosition;
+	newNode->obstacle.speed = (Vector2){ 0.0f, 0.0f };
+	newNode->obstacle.active = true;
+	newNode->obstacle.color = RED;
+	if (leftCount2 <= rightCount2) {
+		newNode->obstacle.movingLeft = true;
+		leftCount2++;
+	}
+	else {
+		newNode->obstacle.movingLeft = false;
+		rightCount2++;
+	}
+	newNode->next = *head;
+	*head = newNode;
+}
 void UpdateObstacles(ObstacleNode* head, EnvItem* envItems, int envItemsLength, float delta, Player* player, GameState* currentState) {
 	ObstacleNode* current = head;
 	bool playerHit = false;
@@ -341,7 +361,7 @@ void UpdateBoss(Boss* boss, Player* player, EnvItem* envItems, int envItemsLengt
 	if (boss->active && !boss->defeated) {
 		float platformLeft = envItems[envItemsLength - 1].rect.x;
 		float platformRight = envItems[envItemsLength - 1].rect.x + envItems[envItemsLength - 1].rect.width;
-		float bossSpeed = 500.0f;
+		float bossSpeed = 550.0f;
 		float bossWidth = 50.0f;
 		static bool movingLeft = true;
 		if (movingLeft) {
@@ -470,6 +490,10 @@ int main(void) {
 	const int screenHeight = 1080; 
 	InitWindow(screenWidth, screenHeight, "Plataformia - a Spider-Man Game");
 
+	InitAudioDevice();
+	musicadefundo = LoadMusicStream("resources/background_music.ogg");
+	PlayMusicStream(musicadefundo);
+
 	Web web = { 0 };
 	web.active = false;
 	web.speed = (Vector2){ 500.0f, 0.0f };
@@ -500,18 +524,24 @@ int main(void) {
 	EnvItem envItems[] = {
 		{{ -300, 400, 1300, 472 }, 1, BLACK },
 		{{ 300, 200, 400, 10 }, 1, BLACK },
-		{{ 250, 300, 100, 10 }, 1, BLACK },
+		{{ 200, 300, 100, 10 }, 1, BLACK },
 		{{ 650, 300, 100, 10 }, 1, BLACK },
 		{{ 250, 100, 100, 10 }, 1, BLACK },
 		{{ 650, 100, 100, 10 }, 1, BLACK },
 		{{ 450 - 37.5f, 50, 180, 10 }, 1, BLACK },
-		{{ 220, -30, 100, 10 }, 1, BLACK },
+		{{ 220, -30, 200, 10 }, 1, BLACK },
+		{{600, -50, 100, 10}, 1,BLACK },
 		{{ -130, -130, 300, 10 }, 1, BLACK },
-		//duas em cima
 		{{-50,-230,100,10}, 1, BLACK},
-		{{150, -290, 100, 10}, 1, BLACK},
+		{{150, -280, 100, 10}, 1, BLACK},
+		{{250, -390, 100, 10}, 1, BLACK},
+		{{300, -490, 100, 10}, 1, BLACK},
+		{{500, -160, 100, 10}, 1, BLACK},
+		{{500, -590, 100, 10}, 1, BLACK},
+		{{600, -450, 100, 10}, 1, BLACK},
+		{{650, -270,100,10},1,BLACK},
 		//boss
-		{{310, -390, 300, 10}, 1, BLACK}
+		{{-100, -690, 600, 10}, 1, BLACK}
 	};
 	int envItemsLength = sizeof(envItems) / sizeof(envItems[0]);
 
@@ -543,7 +573,10 @@ int main(void) {
 	float coinRadius = (moedas.width * coinScale) / 2.0f;
 	coin coins[MAX_COINS] = {
 		{{ 350, 180 }, false, coinRadius },
+		{{400, -600}, false, coinRadius },
 		{{ 690, 280 }, false, coinRadius },
+		{{ 260, 260 }, false, coinRadius },
+		{{ 500, -400 }, false, coinRadius },
 		{{ 510, 30 }, false, coinRadius }
 	};
 
@@ -562,6 +595,7 @@ int main(void) {
 	// Loop principal do jogo
 	while (!WindowShouldClose()) {
 		float deltaTime = GetFrameTime();
+		UpdateMusicStream(musicadefundo);
 
 		if (currentState == MENU) {
 			if (IsKeyPressed(KEY_ENTER)) {
@@ -585,9 +619,10 @@ int main(void) {
 
 			obstacleSpawnTimer += deltaTime;
 			if (obstacleSpawnTimer >= OBSTACLE_SPAWN_TIME) {
-				obstacleSpawnTimer = 0.0f;
-				AddObstacle(&obstacleList, (Vector2) { 500, 100 });
+				obstacleSpawnTimer = -2.0f;
+				AddObstacle(&obstacleList, (Vector2) { 550, 100 });
 				AddObstacle2(&obstacleList, (Vector2) { 500, -100 });
+				AddObstacle3(&obstacleList, (Vector2) { -15, -420 });
 			}
 			UpdateObstacles(obstacleList, envItems, envItemsLength, deltaTime, &player, &currentState);
 			RemoveInactiveObstacles(&obstacleList);
@@ -619,7 +654,8 @@ int main(void) {
 			DrawText("Aperte ENTER para começar", commandX - MeasureText("Aperte ENTER para começar", fontSize) / 2, screenHeight / 2 + 10, fontSize, WHITE);
 			DrawText("ou ESC para sair.", commandX - MeasureText("ou ESC para sair.", fontSize) / 2, screenHeight / 2 + 40, fontSize, WHITE);
 			DrawText("Use as setas do teclado para se mover", commandX - MeasureText("Use as setas do teclado para se mover", fontSize) / 2, screenHeight / 2 + 70, fontSize, WHITE);
-			DrawText("e a barra de espaço para pular!", commandX - MeasureText("e a barra de espaço para pular!", fontSize) / 2, screenHeight / 2 + 110, fontSize, WHITE);
+			DrawText("Use a tecla T para soltar teia", commandX - MeasureText("Use a tecla T para soltar teia", fontSize) / 2, screenHeight / 2 + 100, fontSize, WHITE);
+			DrawText("e a barra de espaço para pular!", commandX - MeasureText("e a barra de espaço para pular!", fontSize) / 2, screenHeight / 2 + 130, fontSize, WHITE);
 		}
 		else if (currentState == GAMEPLAY) {
 			float scaleX = (float)screenWidth / backgroundgameplayy.width * 1.2f;
@@ -810,6 +846,8 @@ int main(void) {
 	}
 	FreeObstacleList(obstacleList);
 	UnloadTexture(backgroundgameplayy);
+	UnloadMusicStream(musicadefundo);
+	CloseAudioDevice();
 	UnloadTexture(moedas);
 	UnloadTexture(concreto);
 	UnloadTexture(plataforma);
