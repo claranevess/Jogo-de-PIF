@@ -62,7 +62,7 @@ Para executar o Plataformia, siga essas etapas:
 
 -gcc main.c -o main -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
-./main
+./src/main
 
 5. Divirta-se jogando Plataformia com seus amigos!
 
