@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "resource_dir.h"
 
 // Constantes para o jogo
 #define G 720
@@ -491,7 +492,8 @@ int main(void) {
 	InitWindow(screenWidth, screenHeight, "Plataformia - a Spider-Man Game");
 
 	InitAudioDevice();
-	musicadefundo = LoadMusicStream("resources/background_music.ogg");
+	SearchAndSetResourceDir("resources");
+	
 	PlayMusicStream(musicadefundo);
 
 	Web web = { 0 };
@@ -499,23 +501,24 @@ int main(void) {
 	web.speed = (Vector2){ 500.0f, 0.0f };
 
 	// Carregamento das texturas
-	backgroundgameplayy = LoadTexture("resources/backgroundgameplayy.png");
+	
+	backgroundgameplayy = LoadTexture("backgroundgameplayy.png");
 	float scale = (float)screenWidth / backgroundgameplayy.width;
-	moedas = LoadTexture("resources/coin.png");
-	concreto = LoadTexture("resources/concreto.png");
-	plataforma = LoadTexture("resources/plataforma.png");
-	obstaculo = LoadTexture("resources/obstaculo.png");
-	teia = LoadTexture("resources/teia.png");
-	playerparado = LoadTexture("resources/playerparado.png");
-	playerpulando = LoadTexture("resources/playerpulando.png");
-	playerdireita[0] = LoadTexture("resources/playerdireta1.png");
-	playerdireita[1] = LoadTexture("resources/playerdireta2.png");
-	playerdireita[2] = LoadTexture("resources/playerdireta3.png");
-	playeresquerda[0] = LoadTexture("resources/playeresquerda1.png");
-	playeresquerda[1] = LoadTexture("resources/playeresquerda2.png");
-	playeresquerda[2] = LoadTexture("resources/playeresquerda3.png");
-	vilao = LoadTexture("resources/boss.png");
-	vida = LoadTexture("resources/vida.png");
+	moedas = LoadTexture("coin.png");
+	concreto = LoadTexture("concreto.png");
+	plataforma = LoadTexture("plataforma.png");
+	obstaculo = LoadTexture("obstaculo.png");
+	teia = LoadTexture("teia.png");
+	playerparado = LoadTexture("playerparado.png");
+	playerpulando = LoadTexture("playerpulando.png");
+	playerdireita[0] = LoadTexture("playerdireta1.png");
+	playerdireita[1] = LoadTexture("playerdireta2.png");
+	playerdireita[2] = LoadTexture("playerdireta3.png");
+	playeresquerda[0] = LoadTexture("playeresquerda1.png");
+	playeresquerda[1] = LoadTexture("playeresquerda2.png");
+	playeresquerda[2] = LoadTexture("playeresquerda3.png");
+	vilao = LoadTexture("boss.png");
+	vida = LoadTexture("vida.png");
 
 	GameState currentState = MENU;
 	int coinsCollected = 0;
@@ -863,5 +866,5 @@ int main(void) {
 	UnloadTexture(vilao);
 	UnloadTexture(teia);
 	CloseWindow();
-	return 0;
+	return 0;
 }
