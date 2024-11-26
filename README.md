@@ -44,27 +44,35 @@ O jogador deve, seguindo as intruções da tela de menu, pular pelas plataformas
 
 ## ⚙️ Executando o jogo
 
-Para executar o Plataformia, siga essas etapas:
+Para executar o Plataformia, siga essas etapas no terminal:
 
-1-Baixar dependências:
+cd /
+ls
+cd usr
+ls
+cd ..
+cd mnt
+ls
+cd c
+cd Users/55819/source/repos/Plataformia
+ls
+cd bin
+cd debug
+./linux.sh
+./Plataformia
+sudo apt update
+sudo apt install build-essential libgl1-mesa-dev libegl1-mesa-dev libopenal-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libasound2-dev libvulkan-dev git cmake
+sudo apt install libxinerama-dev
+sudo apt install apt-file
+apt-file update
+apt-file search "X11/extensions/Xinerama.h"
+sudo apt install x11-apps
+export DISPLAY=$(grep -oP '(?<=nameserver\s)([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)' /etc/resolv.conf):0.0
+xclock
 
--sudo apt update
+No seu repositório local, vá na subpasta Bin e depois em debug e clique 2x no arquivo Plataformia.exe
 
--sudo apt install build-essential libgl1-mesa-dev libegl1-mesa-dev libopenal-dev libx11-dev libxcursor-dev libxrandr-dev libxi-dev libasound2-dev libvulkan-dev git cmake
-
-2- Baixe a raylib:
-
--sudo apt install libraylib-dev
-
-3- Dê git clone neste repositório
-
-4- Compile:
-
--gcc main.c -o main -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-
-./src/main
-
-5. Divirta-se jogando Plataformia com seus amigos!
+Divirta-se jogando Plataformia com seus amigos!
 
 ## Membros
 
